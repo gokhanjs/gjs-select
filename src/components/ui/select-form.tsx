@@ -10,16 +10,19 @@ import { cn } from "@/lib/utils"
 function FormLabel({
   children,
   required,
+  id,
   htmlFor,
   className,
 }: {
   children: React.ReactNode
   required?: boolean
+  id?: string
   htmlFor?: string
   className?: string
 }) {
   return (
     <label
+      id={id}
       htmlFor={htmlFor}
       className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)}
     >
@@ -92,6 +95,7 @@ export function SelectFormField<
   ...selectProps
 }: SelectFormFieldProps<TFieldValues, TName, V>) {
   const fieldId = React.useId()
+  const labelId = `${fieldId}lbl`
   const errorId = `${fieldId}err`
   const descId = `${fieldId}desc`
 
@@ -109,7 +113,7 @@ export function SelectFormField<
         return (
           <div className={cn("flex flex-col gap-1.5", className)}>
             {label && (
-              <FormLabel htmlFor={fieldId} required={required}>
+              <FormLabel id={labelId} htmlFor={fieldId} required={required}>
                 {label}
               </FormLabel>
             )}
@@ -122,6 +126,7 @@ export function SelectFormField<
               status={resolvedStatus}
               aria-invalid={hasError}
               aria-describedby={describedBy}
+              aria-labelledby={label ? labelId : undefined}
             />
             {description && !hasError && (
               <FormDescription id={descId}>{description}</FormDescription>

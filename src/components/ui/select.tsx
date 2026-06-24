@@ -101,6 +101,7 @@ export interface SelectProps<V extends SelectValue = string> {
   "aria-labelledby"?: string
   "aria-invalid"?: boolean
   "aria-describedby"?: string
+  "data-testid"?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -545,6 +546,7 @@ export function Select<V extends SelectValue = string>({
   "aria-labelledby": ariaLabelledby,
   "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedby,
+  "data-testid": dataTestId,
 }: SelectProps<V>) {
   const isMultiple = mode === "multiple" || mode === "tags"
   const showSearch = showSearchProp ?? isMultiple
@@ -872,7 +874,9 @@ export function Select<V extends SelectValue = string>({
         data-gjs-select-search-wrapper=""
         className={cn(
           "gjs-select-search-wrapper flex items-center border-b border-border px-3",
-          !showSearch && !isMultiple && "hidden",
+          // Use h-0/overflow-hidden instead of hidden (display:none) so the
+          // input remains focusable for keyboard navigation (WCAG 2.1.1).
+          !showSearch && !isMultiple && "h-0 overflow-hidden border-b-0 px-0",
         )}
       >
         <CommandInput
@@ -984,6 +988,7 @@ export function Select<V extends SelectValue = string>({
           aria-invalid={ariaInvalid || undefined}
           aria-describedby={ariaDescribedby}
           aria-disabled={disabled || undefined}
+          data-testid={dataTestId}
           data-gjs-select-trigger=""
           data-disabled={disabled || undefined}
           data-open={open || undefined}

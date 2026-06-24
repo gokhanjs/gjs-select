@@ -140,18 +140,19 @@ export default function Page() {
           onChange={(v) => setSingle(v as string | null)}
           allowClear
           placeholder="Pick a fruit"
+          aria-label="Fruit selection"
         />
         <p className="text-xs text-muted-foreground">value: {single ?? "–"}</p>
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Single + search</p>
-        <Select options={FRUITS} showSearch allowClear placeholder="Search fruits" />
+        <Select options={FRUITS} showSearch allowClear placeholder="Search fruits" aria-label="Fruit search" />
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Grouped</p>
-        <Select options={GROUPED} allowClear placeholder="Pick one" />
+        <Select options={GROUPED} allowClear placeholder="Pick one" aria-label="Grouped item selection" />
       </section>
 
       <section className="space-y-2">
@@ -164,6 +165,7 @@ export default function Page() {
           allowClear
           placeholder="Pick fruits"
           maxTagCount={3}
+          aria-label="Multiple fruit selection"
         />
         <p className="text-xs text-muted-foreground">value: [{multi.join(", ")}]</p>
       </section>
@@ -177,6 +179,7 @@ export default function Page() {
           onChange={(v) => setTags(v as string[])}
           allowClear
           placeholder="Type to create"
+          aria-label="Tag creation"
         />
         <p className="text-xs text-muted-foreground">value: [{tags.join(", ")}]</p>
       </section>
@@ -184,34 +187,34 @@ export default function Page() {
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Sizes</p>
         <div className="space-y-2">
-          <Select options={FRUITS} size="small" placeholder="Small" />
-          <Select options={FRUITS} size="middle" placeholder="Middle" />
-          <Select options={FRUITS} size="large" placeholder="Large" />
+          <Select options={FRUITS} size="small" placeholder="Small" aria-label="Small size example" />
+          <Select options={FRUITS} size="middle" placeholder="Middle" aria-label="Middle size example" />
+          <Select options={FRUITS} size="large" placeholder="Large" aria-label="Large size example" />
         </div>
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Status</p>
-        <Select options={FRUITS} status="error" placeholder="Error state" />
-        <Select options={FRUITS} status="warning" placeholder="Warning state" />
+        <Select options={FRUITS} status="error" placeholder="Error state" aria-label="Error status example" />
+        <Select options={FRUITS} status="warning" placeholder="Warning state" aria-label="Warning status example" />
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Variants</p>
-        <Select options={FRUITS} variant="outlined" placeholder="Outlined" />
-        <Select options={FRUITS} variant="filled" placeholder="Filled" />
-        <Select options={FRUITS} variant="borderless" placeholder="Borderless" />
+        <Select options={FRUITS} variant="outlined" placeholder="Outlined" aria-label="Outlined variant example" />
+        <Select options={FRUITS} variant="filled" placeholder="Filled" aria-label="Filled variant example" />
+        <Select options={FRUITS} variant="borderless" placeholder="Borderless" aria-label="Borderless variant example" />
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Loading / Disabled</p>
-        <Select options={FRUITS} loading placeholder="Loading..." />
-        <Select options={FRUITS} disabled placeholder="Disabled" />
+        <Select options={FRUITS} loading placeholder="Loading..." aria-label="Loading state example" />
+        <Select options={FRUITS} disabled placeholder="Disabled" aria-label="Disabled state example" />
       </section>
 
       <section className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Virtual (500 items)</p>
-        <Select options={MANY} virtual showSearch placeholder="Search 500 items" allowClear />
+        <Select options={MANY} virtual showSearch placeholder="Search 500 items" allowClear aria-label="Virtual list selection" />
       </section>
 
       <section className="space-y-2">
@@ -225,6 +228,7 @@ export default function Page() {
             </span>
           )}
           placeholder="Custom render"
+          aria-label="Custom render example"
         />
       </section>
 
