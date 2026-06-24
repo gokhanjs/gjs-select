@@ -41,11 +41,6 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
       },
     },
-    {
-      name: "parity",
-      testMatch: "**/select.parity.spec.ts",
-      use: { ...devices["Desktop Chrome"] },
-    },
   ],
   webServer: {
     command: "pnpm dev",

@@ -6,6 +6,7 @@
 .pnp.*
 .yarn/*
 !.yarn/patches
+.temp
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
