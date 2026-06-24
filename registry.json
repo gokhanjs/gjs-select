@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "gjs-ui",
+  "homepage": "https://github.com/gokhan/gjs-ui",
+  "items": [
+    {
+      "name": "gjs-select",
+      "type": "registry:ui",
+      "description": "A feature-rich Select component built on Radix Popover + cmdk + @tanstack/react-virtual.",
+      "dependencies": [
+        "radix-ui",
+        "cmdk",
+        "@tanstack/react-virtual",
+        "class-variance-authority",
+        "lucide-react"
+      ],
+      "registryDependencies": ["utils"],
+      "files": [
+        {
+          "path": "ui/gjs-select.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    }
+  ]
+}
