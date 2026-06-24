@@ -18,6 +18,7 @@ const OPTIONS = [
 export default function ApiFixturePage() {
   const [ready, setReady] = useState(false)
   const [autofocus, setAutofocus] = useState(false)
+  const [entered, setEntered] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -80,6 +81,29 @@ export default function ApiFixturePage() {
         defaultValue="apple"
         aria-label="optionLabelProp fixture"
         data-testid="labelprop-select"
+      />
+      <Select
+        options={OPTIONS}
+        direction="rtl"
+        placeholder="rtl"
+        aria-label="direction fixture"
+        data-testid="rtl-select"
+      />
+      <Select
+        options={OPTIONS}
+        onMouseEnter={() => setEntered(true)}
+        placeholder="events"
+        aria-label="event forward fixture"
+        data-testid="events-select"
+      />
+      <div data-testid="entered">{entered ? "yes" : "no"}</div>
+      <div id="popup-host" data-testid="popup-host" />
+      <Select
+        options={OPTIONS}
+        getPopupContainer={() => document.getElementById("popup-host") as HTMLElement}
+        placeholder="container"
+        aria-label="getPopupContainer fixture"
+        data-testid="container-select"
       />
     </main>
   )

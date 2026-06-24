@@ -323,6 +323,24 @@ test("optionLabelProp shows the chosen prop in the selector", async ({ page }) =
   await expect(t.locator("[data-gjs-select-value]")).toHaveText("apple")
 })
 
+test("getPopupContainer portals the dropdown into the given node", async ({ page }) => {
+  await page.goto("/test/api")
+  await page.locator('[data-testid="container-select"]').click()
+  await expect(page.locator("#popup-host [data-gjs-select-dropdown]")).toBeVisible()
+})
+
+test("direction=rtl sets dir on the control", async ({ page }) => {
+  await page.goto("/test/api")
+  await expect(page.locator('[data-testid="rtl-select"]')).toHaveAttribute("dir", "rtl")
+})
+
+test("forwards onMouseEnter to the control", async ({ page }) => {
+  await page.goto("/test/api")
+  await expect(page.locator('[data-testid="entered"]')).toHaveText("no")
+  await page.locator('[data-testid="events-select"]').hover()
+  await expect(page.locator('[data-testid="entered"]')).toHaveText("yes")
+})
+
 // ─── 9. Sizes ─────────────────────────────────────────────────────────────────
 
 test("small size has data-size=small", async ({ page }) => {

@@ -82,6 +82,12 @@ export interface SelectProps<V extends SelectValue = string> {
   onClear?: () => void
   onFocus?: React.FocusEventHandler<HTMLDivElement>
   onBlur?: React.FocusEventHandler<HTMLDivElement>
+  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
+  onMouseDown?: React.MouseEventHandler<HTMLDivElement>
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>
+  onKeyUp?: React.KeyboardEventHandler<HTMLDivElement>
   onDropdownVisibleChange?: (open: boolean) => void
   open?: boolean
   defaultOpen?: boolean
@@ -98,6 +104,8 @@ export interface SelectProps<V extends SelectValue = string> {
   fieldNames?: { label?: string; value?: string; options?: string }
   placement?: "bottom" | "top" | "bottomLeft" | "bottomRight" | "topLeft" | "topRight"
   popupMatchSelectWidth?: boolean | number
+  getPopupContainer?: (triggerNode: HTMLElement) => HTMLElement
+  direction?: "ltr" | "rtl"
   listHeight?: number
   virtual?: boolean
   autoClearSearchValue?: boolean
@@ -240,8 +248,8 @@ function SelectTag({
       data-disabled={disabled || undefined}
       className={cn(
         "gjs-select-tag inline-flex max-w-40 shrink-0 items-center gap-0.5 rounded",
-        "border border-border bg-muted pl-1.5 text-foreground",
-        size === "small" ? "pr-0.5 text-xs leading-4" : "pr-1 leading-5",
+        "border border-border bg-muted ps-1.5 text-foreground",
+        size === "small" ? "pe-0.5 text-xs leading-4" : "pe-1 leading-5",
         size === "large" && "text-sm leading-6",
         disabled && "opacity-50",
       )}
@@ -482,7 +490,7 @@ function OptionListInner<V extends SelectValue>(
             {isSelected && (
               <span
                 data-gjs-select-option-check=""
-                className="gjs-select-option-check ml-auto shrink-0 text-primary"
+                className="gjs-select-option-check ms-auto shrink-0 text-primary"
               >
                 {menuItemSelectedIcon ?? <Check className="size-4" />}
               </span>
@@ -611,6 +619,12 @@ function SelectInner<V extends SelectValue = string>(
     onClear,
     onFocus,
     onBlur,
+    onMouseEnter,
+    onMouseLeave,
+    onMouseDown: onMouseDownProp,
+    onClick: onClickProp,
+    onKeyDown: onKeyDownProp,
+    onKeyUp,
     onDropdownVisibleChange,
     open: openProp,
     defaultOpen = false,
@@ -627,6 +641,8 @@ function SelectInner<V extends SelectValue = string>(
     fieldNames,
     placement = "bottomLeft",
     popupMatchSelectWidth = true,
+    getPopupContainer,
+    direction,
     listHeight = 256,
     virtual = false,
     autoClearSearchValue = true,
@@ -698,6 +714,15 @@ function SelectInner<V extends SelectValue = string>(
   React.useEffect(() => {
     if (autoFocus) triggerRef.current?.focus()
   }, [autoFocus])
+
+  // antd parity: getPopupContainer chooses where the dropdown portals. Resolved
+  // after mount since it receives the (now-rendered) trigger node.
+  const [popupContainer, setPopupContainer] = React.useState<HTMLElement | null>(null)
+  React.useEffect(() => {
+    if (getPopupContainer && triggerRef.current) {
+      setPopupContainer(getPopupContainer(triggerRef.current))
+    }
+  }, [getPopupContainer])
 
   // ── Options ─────────────────────────────────────────────────────────────────
   const normalizedOptions = React.useMemo(
@@ -1079,6 +1104,7 @@ function SelectInner<V extends SelectValue = string>(
           data-status={status || undefined}
           data-size={size}
           data-mode={mode || undefined}
+          dir={direction}
           tabIndex={disabled ? -1 : 0}
           style={style}
           className={cn(
@@ -1088,9 +1114,17 @@ function SelectInner<V extends SelectValue = string>(
           )}
           onFocus={onFocus}
           onBlur={onBlur}
-          onKeyDown={handleTriggerKeyDown}
-          onClick={() => {
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          onMouseDown={onMouseDownProp}
+          onKeyUp={onKeyUp}
+          onKeyDown={(e) => {
+            handleTriggerKeyDown(e)
+            onKeyDownProp?.(e)
+          }}
+          onClick={(e) => {
             if (!disabled) setOpen(!open)
+            onClickProp?.(e)
           }}
         >
           {prefix != null && (
@@ -1162,7 +1196,7 @@ function SelectInner<V extends SelectValue = string>(
             {isMultiple && selectedValues.length === 0 && !searchValue && (
               <span
                 data-gjs-select-placeholder=""
-                className="gjs-select-placeholder pointer-events-none absolute inset-y-0 left-0 flex items-center text-muted-foreground"
+                className="gjs-select-placeholder pointer-events-none absolute inset-y-0 start-0 flex items-center text-muted-foreground"
               >
                 {placeholder}
               </span>
@@ -1199,7 +1233,7 @@ function SelectInner<V extends SelectValue = string>(
 
           <span
             data-gjs-select-suffix=""
-            className="gjs-select-suffix ml-auto flex shrink-0 items-center gap-1 pl-1"
+            className="gjs-select-suffix ms-auto flex shrink-0 items-center gap-1 ps-1"
           >
             {loading && (
               <Loader2
@@ -1232,9 +1266,10 @@ function SelectInner<V extends SelectValue = string>(
         </div>
       </Popover.Anchor>
 
-      <Popover.Portal>
+      <Popover.Portal container={popupContainer ?? undefined}>
         <Popover.Content
           data-gjs-select-dropdown=""
+          dir={direction}
           side={side}
           align={align}
           sideOffset={4}
