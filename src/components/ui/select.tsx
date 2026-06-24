@@ -59,6 +59,7 @@ export interface SelectProps<V extends SelectValue = string> {
   onSearch?: (value: string) => void
   filterOption?: boolean | ((inputValue: string, option: SelectOption<V>) => boolean)
   optionFilterProp?: string
+  filterSort?: (optionA: SelectOption<V>, optionB: SelectOption<V>, info: { searchValue: string }) => number
   placeholder?: React.ReactNode
   notFoundContent?: React.ReactNode
   loading?: boolean
@@ -69,6 +70,7 @@ export interface SelectProps<V extends SelectValue = string> {
   variant?: "outlined" | "filled" | "borderless"
   maxTagCount?: number | "responsive"
   maxTagPlaceholder?: React.ReactNode | ((omitted: SelectOption<V>[]) => React.ReactNode)
+  maxTagTextLength?: number
   tagRender?: (props: TagRenderProps<V>) => React.ReactElement
   optionRender?: (option: SelectOption<V>, info: { index: number }) => React.ReactNode
   labelRender?: (props: { label: React.ReactNode; value: V }) => React.ReactNode
@@ -85,6 +87,7 @@ export interface SelectProps<V extends SelectValue = string> {
   style?: React.CSSProperties
   dropdownClassName?: string
   dropdownStyle?: React.CSSProperties
+  prefix?: React.ReactNode
   suffixIcon?: React.ReactNode
   clearIcon?: React.ReactNode
   removeIcon?: React.ReactNode
@@ -97,6 +100,7 @@ export interface SelectProps<V extends SelectValue = string> {
   virtual?: boolean
   autoClearSearchValue?: boolean
   tokenSeparators?: string[]
+  autoFocus?: boolean
   id?: string
   "aria-label"?: string
   "aria-labelledby"?: string
@@ -211,13 +215,23 @@ function SelectTag({
   onClose,
   removeIcon,
   size = "middle",
+  maxTagTextLength,
 }: {
   label: React.ReactNode
   disabled?: boolean
   onClose: (e: React.MouseEvent) => void
   removeIcon?: React.ReactNode
   size?: "small" | "middle" | "large"
+  maxTagTextLength?: number
 }) {
+  // antd parity: truncate string/number labels longer than maxTagTextLength,
+  // appending an ellipsis. Non-text (ReactNode) labels are left untouched.
+  const display =
+    maxTagTextLength &&
+    (typeof label === "string" || typeof label === "number") &&
+    String(label).length > maxTagTextLength
+      ? `${String(label).slice(0, maxTagTextLength)}...`
+      : label
   return (
     <span
       data-gjs-select-tag=""
@@ -230,7 +244,7 @@ function SelectTag({
         disabled && "opacity-50",
       )}
     >
-      <span className="truncate">{label}</span>
+      <span className="truncate">{display}</span>
       {!disabled && (
         <span
           data-gjs-select-tag-close=""
@@ -562,6 +576,7 @@ function SelectInner<V extends SelectValue = string>(
     onSearch,
     filterOption,
     optionFilterProp = "label",
+    filterSort,
     placeholder = "Select...",
     notFoundContent = "No options",
     loading = false,
@@ -572,6 +587,7 @@ function SelectInner<V extends SelectValue = string>(
     variant = "outlined",
     maxTagCount,
     maxTagPlaceholder,
+    maxTagTextLength,
     tagRender,
     optionRender,
     labelRender,
@@ -588,6 +604,7 @@ function SelectInner<V extends SelectValue = string>(
     style,
     dropdownClassName,
     dropdownStyle,
+    prefix,
     suffixIcon,
     clearIcon,
     removeIcon,
@@ -600,6 +617,7 @@ function SelectInner<V extends SelectValue = string>(
     virtual = false,
     autoClearSearchValue = true,
     tokenSeparators,
+    autoFocus,
     id,
     "aria-label": ariaLabel,
     "aria-labelledby": ariaLabelledby,
@@ -662,6 +680,11 @@ function SelectInner<V extends SelectValue = string>(
     nativeElement: triggerRef.current,
   }), [])
 
+  // antd parity: focus the control on mount when autoFocus is set.
+  React.useEffect(() => {
+    if (autoFocus) triggerRef.current?.focus()
+  }, [autoFocus])
+
   // ── Options ─────────────────────────────────────────────────────────────────
   const normalizedOptions = React.useMemo(
     () => normalizeItems<V>(optionsProp as SelectItem<V>[], fieldNames),
@@ -676,34 +699,45 @@ function SelectInner<V extends SelectValue = string>(
   )
 
   const filteredOptions = React.useMemo((): SelectItem<V>[] => {
-    if (!searchValue) return normalizedOptions
-    const defaultFilter = (input: string, opt: SelectOption<V>) => {
-      const prop =
-        optionFilterProp === "label"
-          ? nodeToString(opt.label)
-          : String((opt as Record<string, unknown>)[optionFilterProp] ?? "")
-      return prop.toLowerCase().includes(input.toLowerCase())
-    }
-    const filter =
-      filterOption === false
-        ? () => true
-        : typeof filterOption === "function"
-          ? filterOption
-          : defaultFilter
-    const run = (items: SelectItem<V>[]): SelectItem<V>[] => {
-      const result: SelectItem<V>[] = []
-      for (const item of items) {
-        if (isOptGroup(item)) {
-          const opts = item.options.filter((o) => filter(searchValue, o))
-          if (opts.length) result.push({ ...item, options: opts })
-        } else if (filter(searchValue, item)) {
-          result.push(item)
-        }
+    const filtered = (): SelectItem<V>[] => {
+      if (!searchValue) return normalizedOptions
+      const defaultFilter = (input: string, opt: SelectOption<V>) => {
+        const prop =
+          optionFilterProp === "label"
+            ? nodeToString(opt.label)
+            : String((opt as Record<string, unknown>)[optionFilterProp] ?? "")
+        return prop.toLowerCase().includes(input.toLowerCase())
       }
-      return result
+      const filter =
+        filterOption === false
+          ? () => true
+          : typeof filterOption === "function"
+            ? filterOption
+            : defaultFilter
+      const run = (items: SelectItem<V>[]): SelectItem<V>[] => {
+        const result: SelectItem<V>[] = []
+        for (const item of items) {
+          if (isOptGroup(item)) {
+            const opts = item.options.filter((o) => filter(searchValue, o))
+            if (opts.length) result.push({ ...item, options: opts })
+          } else if (filter(searchValue, item)) {
+            result.push(item)
+          }
+        }
+        return result
+      }
+      return run(normalizedOptions)
     }
-    return run(normalizedOptions)
-  }, [normalizedOptions, searchValue, filterOption, optionFilterProp])
+    const base = filtered()
+    if (!filterSort) return base
+    // antd parity: filterSort orders options after filtering — within each group
+    // for grouped data, otherwise across the flat option list.
+    const sortOpts = (opts: SelectOption<V>[]) =>
+      [...opts].sort((a, b) => filterSort(a, b, { searchValue }))
+    return base.some(isOptGroup)
+      ? base.map((it) => (isOptGroup(it) ? { ...it, options: sortOpts(it.options) } : it))
+      : sortOpts(base as SelectOption<V>[])
+  }, [normalizedOptions, searchValue, filterOption, optionFilterProp, filterSort])
 
   // Clear the active descendant when the popup closes or has no matches (an
   // empty list unmounts OptionList, so it cannot clear it itself).
@@ -1030,6 +1064,14 @@ function SelectInner<V extends SelectValue = string>(
             if (!disabled) setOpen(!open)
           }}
         >
+          {prefix != null && (
+            <span
+              data-gjs-select-prefix=""
+              className="gjs-select-prefix flex shrink-0 items-center"
+            >
+              {prefix}
+            </span>
+          )}
           {isMultiple &&
             visibleTags.map(({ value, label, disabled: td }) =>
               tagRender ? (
@@ -1048,6 +1090,7 @@ function SelectInner<V extends SelectValue = string>(
                   onClose={(e) => handleDeselect(value, e)}
                   removeIcon={removeIcon}
                   size={size}
+                  maxTagTextLength={maxTagTextLength}
                 />
               ),
             )}

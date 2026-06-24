@@ -276,6 +276,33 @@ test("tags mode: tokenSeparators splits typed input into multiple tags", async (
   await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(3)
 })
 
+// ─── Phase 4 API props (isolated fixtures at /test/api) ───────────────────────
+
+test("autoFocus focuses the control on mount", async ({ page }) => {
+  await page.goto("/test/api?autofocus=1")
+  await expect(page.locator('[data-testid="autofocus-select"]')).toBeFocused()
+})
+
+test("prefix renders inside the control", async ({ page }) => {
+  await page.goto("/test/api")
+  const t = page.locator('[data-testid="prefix-select"]')
+  await expect(t.locator("[data-gjs-select-prefix]")).toHaveText("$")
+})
+
+test("maxTagTextLength truncates the tag label", async ({ page }) => {
+  await page.goto("/test/api")
+  // "A very long option label" → first 6 chars + ellipsis.
+  const t = page.locator('[data-testid="maxtag-select"]')
+  await expect(t.locator("[data-gjs-select-tag]")).toContainText("A very...")
+})
+
+test("filterSort orders the option list", async ({ page }) => {
+  await page.goto("/test/api")
+  await page.locator('[data-testid="sort-select"]').click()
+  // localeCompare ascending puts "A very long option label" first (space < letters).
+  await expect(page.locator("[data-gjs-select-option]").first()).toContainText("A very long")
+})
+
 // ─── 9. Sizes ─────────────────────────────────────────────────────────────────
 
 test("small size has data-size=small", async ({ page }) => {
