@@ -96,6 +96,7 @@ export interface SelectProps<V extends SelectValue = string> {
   listHeight?: number
   virtual?: boolean
   autoClearSearchValue?: boolean
+  tokenSeparators?: string[]
   id?: string
   "aria-label"?: string
   "aria-labelledby"?: string
@@ -142,6 +143,22 @@ function nodeToString(node: React.ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node)
   if (Array.isArray(node)) return node.map(nodeToString).join("")
   return ""
+}
+
+/** antd parity: split `text` on any of `tokens`, dropping empty segments.
+ *  Returns null when no separator actually matched, so callers fall through to a
+ *  normal search update. Mirrors rc-select's getSeparatedContent. */
+function splitByTokens(text: string, tokens: string[]): string[] | null {
+  if (!tokens.length) return null
+  let matched = false
+  const separate = (str: string, [token, ...rest]: string[]): string[] => {
+    if (!token) return [str]
+    const parts = str.split(token)
+    matched = matched || parts.length > 1
+    return parts.flatMap((unit) => separate(unit, rest))
+  }
+  const list = separate(text, tokens).filter(Boolean)
+  return matched ? list : null
 }
 
 const SIDE_ALIGN: Record<
@@ -582,6 +599,7 @@ function SelectInner<V extends SelectValue = string>(
     listHeight = 256,
     virtual = false,
     autoClearSearchValue = true,
+    tokenSeparators,
     id,
     "aria-label": ariaLabel,
     "aria-labelledby": ariaLabelledby,
@@ -801,12 +819,43 @@ function SelectInner<V extends SelectValue = string>(
     [valueProp, searchValueProp, onClear, onChange, isMultiple],
   )
 
+  const addTokens = React.useCallback(
+    (words: string[]) => {
+      const toAdd =
+        mode === "tags"
+          ? (words as V[])
+          : words
+              .map((w) => allFlat.find((o) => nodeToString(o.label).toLowerCase() === w.toLowerCase())?.value)
+              .filter((v): v is V => v !== undefined)
+      const next = Array.from(new Set([...selectedValues, ...toAdd]))
+      if (next.length === selectedValues.length) return
+      const optOf = (v: V) => allFlatMap.get(v) ?? ({ label: String(v), value: v } as SelectOption<V>)
+      next.forEach((v) => {
+        if (!selectedValues.includes(v)) onSelectProp?.(v, optOf(v))
+      })
+      commitChange(next, next.map(optOf))
+    },
+    [mode, allFlat, selectedValues, allFlatMap, onSelectProp, commitChange],
+  )
+
   const handleSearch = React.useCallback(
     (value: string) => {
+      // tokenSeparators: a typed or pasted value containing a separator is split
+      // into tags (tags mode) or matched against existing options (multiple),
+      // then the search clears — both typing and paste funnel through onChange.
+      if (isMultiple && tokenSeparators?.length) {
+        const words = splitByTokens(value, tokenSeparators)
+        if (words) {
+          addTokens(words)
+          if (searchValueProp === undefined) setInternalSearch("")
+          onSearch?.("")
+          return
+        }
+      }
       if (searchValueProp === undefined) setInternalSearch(value)
       onSearch?.(value)
     },
-    [searchValueProp, onSearch],
+    [isMultiple, tokenSeparators, addTokens, searchValueProp, onSearch],
   )
 
   const handleTagsEnter = React.useCallback(() => {

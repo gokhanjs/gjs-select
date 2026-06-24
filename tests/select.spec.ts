@@ -268,6 +268,14 @@ test("tags mode: selects existing option without creating duplicate", async ({ p
   await expect(t.locator("[data-gjs-select-tag]").filter({ hasText: "Apple" })).toHaveCount(1)
 })
 
+test("tags mode: tokenSeparators splits typed input into multiple tags", async ({ page }) => {
+  await openSelect(page, 4)
+  // A separator in the typed value splits it into one tag per non-empty segment.
+  await searchInput(page).fill("x,y,z,")
+  const t = trigger(page, 4)
+  await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(3)
+})
+
 // ─── 9. Sizes ─────────────────────────────────────────────────────────────────
 
 test("small size has data-size=small", async ({ page }) => {

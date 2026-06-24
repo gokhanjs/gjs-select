@@ -175,6 +175,7 @@ export default function Page() {
         <Select
           options={FRUITS}
           mode="tags"
+          tokenSeparators={[","]}
           value={tags}
           onChange={(v) => setTags(v as string[])}
           allowClear

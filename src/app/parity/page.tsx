@@ -115,7 +115,7 @@ export default function ParityPage() {
         id="tags"
         label="tags + separators"
         antd={<AntdSelect mode="tags" tokenSeparators={[","]} options={FRUITS} placeholder="Type" style={{ width: "100%" }} popupClassName="antd-pop-tags" />}
-        gjs={<GjsSelect mode="tags" options={FRUITS} placeholder="Type" aria-label="gjs tags" dropdownClassName="gjs-pop-tags" />}
+        gjs={<GjsSelect mode="tags" tokenSeparators={[","]} options={FRUITS} placeholder="Type" aria-label="gjs tags" dropdownClassName="gjs-pop-tags" />}
       />
 
       {/* ── Grouped ── */}
