@@ -206,7 +206,7 @@ function SelectTag({
       data-gjs-select-tag=""
       data-disabled={disabled || undefined}
       className={cn(
-        "gjs-select-tag inline-flex max-w-[160px] shrink-0 items-center gap-0.5 rounded",
+        "gjs-select-tag inline-flex max-w-40 shrink-0 items-center gap-0.5 rounded",
         "border border-border bg-muted pl-1.5 text-foreground",
         size === "small" ? "pr-0.5 text-xs leading-4" : "pr-1 leading-5",
         size === "large" && "text-sm leading-6",
@@ -415,7 +415,7 @@ function OptionListInner<V extends SelectValue>(
         aria-selected={isActive}
         aria-disabled={option.disabled || undefined}
         className={cn(
-          "gjs-select-option flex cursor-default select-none items-center gap-2 px-2 py-1.5 text-sm outline-none transition-colors",
+          "gjs-select-option flex cursor-default select-none items-center gap-2 px-3 py-1.5 text-sm outline-none transition-colors",
           !option.disabled && "hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-accent text-accent-foreground",
           // Disabled: use the contrast-tuned muted token (≥4.5:1) rather than an
@@ -1068,7 +1068,7 @@ function SelectInner<V extends SelectValue = string>(
               className={cn(
                 "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
                 isMultiple
-                  ? "min-w-[40px] flex-1"
+                  ? "min-w-10 flex-1"
                   : searchValue
                     ? "min-w-0 flex-1"
                     : "absolute inset-0 size-full cursor-default opacity-0",
@@ -1147,7 +1147,7 @@ function SelectInner<V extends SelectValue = string>(
           }}
           className={cn(
             "gjs-select-dropdown",
-            "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border",
+            "z-50 min-w-32 overflow-hidden rounded-md border border-border",
             "bg-popover text-popover-foreground shadow-md",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
