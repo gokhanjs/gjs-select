@@ -303,6 +303,26 @@ test("filterSort orders the option list", async ({ page }) => {
   await expect(page.locator("[data-gjs-select-option]").first()).toContainText("A very long")
 })
 
+test("maxCount blocks selecting beyond the limit and disables the rest", async ({ page }) => {
+  await page.goto("/test/api")
+  const t = page.locator('[data-testid="maxcount-select"]')
+  await t.click()
+  await page.locator("[data-gjs-select-option]").nth(0).click()
+  await page.locator("[data-gjs-select-option]").nth(1).click()
+  await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(2)
+  // remaining unselected options are now disabled (antd parity)
+  await expect(
+    page.locator("[data-gjs-select-option]:not([data-selected])").first(),
+  ).toHaveAttribute("aria-disabled", "true")
+})
+
+test("optionLabelProp shows the chosen prop in the selector", async ({ page }) => {
+  await page.goto("/test/api")
+  // option {label:"Apple", value:"apple"} with optionLabelProp="value" → shows "apple"
+  const t = page.locator('[data-testid="labelprop-select"]')
+  await expect(t.locator("[data-gjs-select-value]")).toHaveText("apple")
+})
+
 // ─── 9. Sizes ─────────────────────────────────────────────────────────────────
 
 test("small size has data-size=small", async ({ page }) => {

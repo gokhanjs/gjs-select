@@ -59,6 +59,7 @@ export interface SelectProps<V extends SelectValue = string> {
   onSearch?: (value: string) => void
   filterOption?: boolean | ((inputValue: string, option: SelectOption<V>) => boolean)
   optionFilterProp?: string
+  optionLabelProp?: string
   filterSort?: (optionA: SelectOption<V>, optionB: SelectOption<V>, info: { searchValue: string }) => number
   placeholder?: React.ReactNode
   notFoundContent?: React.ReactNode
@@ -68,6 +69,7 @@ export interface SelectProps<V extends SelectValue = string> {
   size?: "small" | "middle" | "large"
   status?: "error" | "warning"
   variant?: "outlined" | "filled" | "borderless"
+  maxCount?: number
   maxTagCount?: number | "responsive"
   maxTagPlaceholder?: React.ReactNode | ((omitted: SelectOption<V>[]) => React.ReactNode)
   maxTagTextLength?: number
@@ -287,6 +289,7 @@ interface OptionListProps<V extends SelectValue> {
   items: SelectItem<V>[]
   selectedValues: V[]
   isMultiple: boolean
+  maxReached: boolean
   onSelect: (opt: SelectOption<V>) => void
   virtual: boolean
   listHeight: number
@@ -304,6 +307,7 @@ function OptionListInner<V extends SelectValue>(
     items,
     selectedValues,
     isMultiple,
+    maxReached,
     onSelect,
     virtual,
     listHeight,
@@ -341,10 +345,17 @@ function OptionListInner<V extends SelectValue>(
     [rows, optionRows],
   )
 
+  // antd parity: once maxCount is reached, unselected options become disabled
+  // (still selectable to deselect). Keyboard nav and render share this check.
+  const isOptDisabled = React.useCallback(
+    (opt: SelectOption<V>) => !!opt.disabled || (maxReached && !selectedValues.includes(opt.value)),
+    [maxReached, selectedValues],
+  )
+
   const firstEnabled = React.useCallback(() => {
-    const i = optionRows.findIndex((r) => !r.option.disabled)
+    const i = optionRows.findIndex((r) => !isOptDisabled(r.option))
     return i === -1 ? null : i
-  }, [optionRows])
+  }, [optionRows, isOptDisabled])
 
   const [activeIdx, setActiveIdx] = React.useState<number | null>(null)
   const parentRef = React.useRef<HTMLDivElement>(null)
@@ -393,7 +404,7 @@ function OptionListInner<V extends SelectValue>(
         let i = prev === null ? (dir > 0 ? -1 : 0) : prev
         for (let step = 0; step < n; step++) {
           i = (i + dir + n) % n
-          if (!optionRows[i].option.disabled) {
+          if (!isOptDisabled(optionRows[i].option)) {
             scrollToOptIdx(i)
             return i
           }
@@ -401,7 +412,7 @@ function OptionListInner<V extends SelectValue>(
         return prev
       })
     },
-    [optionRows, scrollToOptIdx],
+    [optionRows, scrollToOptIdx, isOptDisabled],
   )
 
   const keyDown = React.useCallback(
@@ -415,14 +426,14 @@ function OptionListInner<V extends SelectValue>(
       } else if (e.key === "Enter") {
         if (activeIdx !== null) {
           const row = optionRows[activeIdx]
-          if (row && !row.option.disabled) {
+          if (row && !isOptDisabled(row.option)) {
             e.preventDefault()
             onSelect(row.option)
           }
         }
       }
     },
-    [move, activeIdx, optionRows, onSelect],
+    [move, activeIdx, optionRows, onSelect, isOptDisabled],
   )
 
   React.useImperativeHandle(ref, () => ({
@@ -433,6 +444,7 @@ function OptionListInner<V extends SelectValue>(
   const renderOption = (option: SelectOption<V>, flatIndex: number, optIdx: number) => {
     const isSelected = selectedValues.includes(option.value)
     const isActive = activeIdx === optIdx
+    const disabled = isOptDisabled(option)
     return (
       <div
         key={String(option.value)}
@@ -441,23 +453,23 @@ function OptionListInner<V extends SelectValue>(
         data-opt-idx={optIdx}
         data-selected={isSelected || undefined}
         data-active={isActive || undefined}
-        data-disabled={option.disabled || undefined}
+        data-disabled={disabled || undefined}
         role="option"
         aria-selected={isActive}
-        aria-disabled={option.disabled || undefined}
+        aria-disabled={disabled || undefined}
         className={cn(
           "gjs-select-option flex cursor-default select-none items-center gap-2 px-3 py-1.5 text-sm outline-none transition-colors",
-          !option.disabled && "hover:bg-accent hover:text-accent-foreground",
+          !disabled && "hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-accent text-accent-foreground",
           // Disabled: use the contrast-tuned muted token (≥4.5:1) rather than an
           // opacity fade, which would drop below WCAG 1.4.3 minimum contrast.
-          option.disabled && "pointer-events-none text-muted-foreground",
+          disabled && "pointer-events-none text-muted-foreground",
           option.className,
         )}
-        onMouseEnter={() => !option.disabled && setActiveIdx(optIdx)}
+        onMouseEnter={() => !disabled && setActiveIdx(optIdx)}
         onMouseDown={(e) => {
           e.preventDefault()
-          if (!option.disabled) onSelect(option)
+          if (!disabled) onSelect(option)
         }}
       >
         {optionRender ? (
@@ -576,6 +588,7 @@ function SelectInner<V extends SelectValue = string>(
     onSearch,
     filterOption,
     optionFilterProp = "label",
+    optionLabelProp,
     filterSort,
     placeholder = "Select...",
     notFoundContent = "No options",
@@ -585,6 +598,7 @@ function SelectInner<V extends SelectValue = string>(
     size = "middle",
     status,
     variant = "outlined",
+    maxCount,
     maxTagCount,
     maxTagPlaceholder,
     maxTagTextLength,
@@ -797,6 +811,8 @@ function SelectInner<V extends SelectValue = string>(
           next = selectedValues.filter((v) => v !== option.value)
           onDeselectProp?.(option.value, option)
         } else {
+          // antd parity: block new selections once maxCount is reached.
+          if (maxCount !== undefined && selectedValues.length >= maxCount) return
           next = [...selectedValues, option.value]
           onSelectProp?.(option.value, option)
         }
@@ -813,7 +829,7 @@ function SelectInner<V extends SelectValue = string>(
     },
     [
       isMultiple, selectedValues, allFlatMap, onSelectProp, onDeselectProp,
-      autoClearSearchValue, searchValueProp, commitChange, setOpen,
+      autoClearSearchValue, searchValueProp, commitChange, setOpen, maxCount,
     ],
   )
 
@@ -861,7 +877,9 @@ function SelectInner<V extends SelectValue = string>(
           : words
               .map((w) => allFlat.find((o) => nodeToString(o.label).toLowerCase() === w.toLowerCase())?.value)
               .filter((v): v is V => v !== undefined)
-      const next = Array.from(new Set([...selectedValues, ...toAdd]))
+      const merged = Array.from(new Set([...selectedValues, ...toAdd]))
+      // antd parity: never exceed maxCount when tokenizing.
+      const next = maxCount !== undefined ? merged.slice(0, maxCount) : merged
       if (next.length === selectedValues.length) return
       const optOf = (v: V) => allFlatMap.get(v) ?? ({ label: String(v), value: v } as SelectOption<V>)
       next.forEach((v) => {
@@ -869,7 +887,7 @@ function SelectInner<V extends SelectValue = string>(
       })
       commitChange(next, next.map(optOf))
     },
-    [mode, allFlat, selectedValues, allFlatMap, onSelectProp, commitChange],
+    [mode, allFlat, selectedValues, allFlatMap, onSelectProp, commitChange, maxCount],
   )
 
   const handleSearch = React.useCallback(
@@ -947,15 +965,23 @@ function SelectInner<V extends SelectValue = string>(
   )
 
   // ── Derived ──────────────────────────────────────────────────────────────────
+  // antd parity: optionLabelProp picks which option field the selector shows for a
+  // chosen value (default `label`); the dropdown always renders the full label.
+  const getOptionLabel = React.useCallback(
+    (opt: SelectOption<V>): React.ReactNode =>
+      optionLabelProp ? (opt[optionLabelProp] as React.ReactNode) : opt.label,
+    [optionLabelProp],
+  )
+
   const allTags = React.useMemo(
     () =>
       isMultiple
         ? selectedValues.map((v) => {
             const opt = allFlatMap.get(v)
-            return { value: v, label: opt?.label ?? String(v), disabled: opt?.disabled ?? false }
+            return { value: v, label: opt ? getOptionLabel(opt) : String(v), disabled: opt?.disabled ?? false }
           })
         : [],
-    [isMultiple, selectedValues, allFlatMap],
+    [isMultiple, selectedValues, allFlatMap, getOptionLabel],
   )
 
   const effectiveMax =
@@ -975,11 +1001,13 @@ function SelectInner<V extends SelectValue = string>(
     if (isMultiple) return null
     const opt = allFlatMap.get(selectedValues[0])
     if (!opt) return null
-    return labelRender ? labelRender({ label: opt.label, value: opt.value }) : opt.label
-  }, [isMultiple, allFlatMap, selectedValues, labelRender])
+    const label = getOptionLabel(opt)
+    return labelRender ? labelRender({ label, value: opt.value }) : label
+  }, [isMultiple, allFlatMap, selectedValues, labelRender, getOptionLabel])
 
   const { side, align } = SIDE_ALIGN[placement]
   const itemHeight = size === "small" ? 26 : size === "large" ? 40 : 32
+  const maxReached = isMultiple && maxCount !== undefined && selectedValues.length >= maxCount
 
   // ── Dropdown menu ─────────────────────────────────────────────────────────────
   // antd parity: the search input lives in the selector (trigger), not here —
@@ -1006,6 +1034,7 @@ function SelectInner<V extends SelectValue = string>(
           items={filteredOptions}
           selectedValues={selectedValues}
           isMultiple={isMultiple}
+          maxReached={maxReached}
           onSelect={handleSelect}
           virtual={virtual}
           listHeight={listHeight}

@@ -67,6 +67,20 @@ export default function ApiFixturePage() {
         aria-label="filterSort fixture"
         data-testid="sort-select"
       />
+      <Select
+        options={OPTIONS}
+        mode="multiple"
+        maxCount={2}
+        aria-label="maxCount fixture"
+        data-testid="maxcount-select"
+      />
+      <Select
+        options={OPTIONS}
+        optionLabelProp="value"
+        defaultValue="apple"
+        aria-label="optionLabelProp fixture"
+        data-testid="labelprop-select"
+      />
     </main>
   )
 }
