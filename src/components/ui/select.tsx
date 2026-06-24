@@ -3,14 +3,6 @@
 import * as React from "react"
 import { cva } from "class-variance-authority"
 import { Popover } from "radix-ui"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "cmdk"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Check, ChevronDown, X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -42,6 +34,14 @@ export interface TagRenderProps<V extends SelectValue = string> {
   disabled: boolean
   closable: boolean
   onClose: (e: React.MouseEvent) => void
+}
+
+/** Imperative handle exposed via ref — mirrors antd's BaseSelectRef. */
+export interface SelectRef {
+  focus: (options?: FocusOptions) => void
+  blur: () => void
+  scrollTo: (index: number) => void
+  nativeElement: HTMLDivElement | null
 }
 
 export interface SelectProps<V extends SelectValue = string> {
@@ -234,103 +234,58 @@ function SelectTag({
   )
 }
 
-// ─── OptionItem (cmdk) ────────────────────────────────────────────────────────
+// ─── OptionList ───────────────────────────────────────────────────────────────
+//
+// Single source of truth for the dropdown list. Renders windowed (react-virtual)
+// when `virtual`, otherwise materialises every row — but the keyboard, active
+// state, and a11y wiring are identical for both, so there is no second code
+// path to drift. Exposes a keyboard handler + scroll control via ref so the
+// search input (and the list itself) can drive navigation, the way antd wires
+// its input to the option list.
 
-function OptionItem<V extends SelectValue>({
-  option,
-  index,
-  isSelected,
-  isMultiple,
-  onSelect,
-  optionRender,
-  menuItemSelectedIcon,
-}: {
-  option: SelectOption<V>
-  index: number
-  isSelected: boolean
-  isMultiple: boolean
-  onSelect: (opt: SelectOption<V>) => void
-  optionRender?: SelectProps<V>["optionRender"]
-  menuItemSelectedIcon?: React.ReactNode
-}) {
-  return (
-    <CommandItem
-      data-gjs-select-option=""
-      data-selected={isSelected || undefined}
-      value={String(option.value)}
-      disabled={option.disabled}
-      onSelect={() => onSelect(option)}
-      className={cn(
-        "gjs-select-option",
-        "flex cursor-default select-none items-center gap-2 px-2 py-1.5 text-sm outline-none",
-        "transition-colors",
-        "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
-        option.className,
-      )}
-    >
-      {optionRender ? (
-        optionRender(option, { index })
-      ) : (
-        <>
-          {isMultiple && (
-            <span
-              data-gjs-select-option-check=""
-              className={cn(
-                "gjs-select-option-check inline-flex size-4 shrink-0 items-center justify-center",
-                "rounded border border-border transition-colors",
-                isSelected && "border-primary bg-primary text-primary-foreground",
-              )}
-            >
-              {isSelected && <Check className="size-3" />}
-            </span>
-          )}
-          <span className="flex-1 truncate">{option.label}</span>
-          {!isMultiple && isSelected && (
-            <span
-              data-gjs-select-option-check=""
-              className="gjs-select-option-check ml-auto shrink-0 text-primary"
-            >
-              {menuItemSelectedIcon ?? <Check className="size-4" />}
-            </span>
-          )}
-        </>
-      )}
-    </CommandItem>
-  )
+export interface OptionListHandle {
+  keyDown: (e: React.KeyboardEvent) => void
+  scrollToIndex: (index: number) => void
 }
-
-// ─── VirtualList ──────────────────────────────────────────────────────────────
 
 type VirtualRow<V extends SelectValue> =
   | { kind: "group"; label: React.ReactNode }
   | { kind: "option"; option: SelectOption<V>; flatIndex: number }
 
-function VirtualList<V extends SelectValue>({
-  items,
-  selectedValues,
-  isMultiple,
-  onSelect,
-  listHeight,
-  itemHeight,
-  optionRender,
-  menuItemSelectedIcon,
-  listboxId,
-  idPrefix,
-  onActiveIdChange,
-}: {
+interface OptionListProps<V extends SelectValue> {
   items: SelectItem<V>[]
   selectedValues: V[]
   isMultiple: boolean
   onSelect: (opt: SelectOption<V>) => void
+  virtual: boolean
   listHeight: number
   itemHeight: number
   optionRender?: SelectProps<V>["optionRender"]
   menuItemSelectedIcon?: React.ReactNode
-  listboxId?: string
-  idPrefix?: string
-  onActiveIdChange?: (id: string | undefined) => void
-}) {
+  defaultActiveFirstOption: boolean
+  listboxId: string
+  optionId: (v: V) => string
+  onActiveIdChange: (id: string | undefined) => void
+}
+
+function OptionListInner<V extends SelectValue>(
+  {
+    items,
+    selectedValues,
+    isMultiple,
+    onSelect,
+    virtual,
+    listHeight,
+    itemHeight,
+    optionRender,
+    menuItemSelectedIcon,
+    defaultActiveFirstOption,
+    listboxId,
+    optionId,
+    onActiveIdChange,
+  }: OptionListProps<V>,
+  ref: React.Ref<OptionListHandle>,
+) {
   const rows = React.useMemo<VirtualRow<V>[]>(() => {
     let fi = 0
     return items.flatMap((item): VirtualRow<V>[] => {
@@ -349,205 +304,303 @@ function VirtualList<V extends SelectValue>({
     [rows],
   )
 
+  // Index of an optionRow within `rows` (for scrolling the virtualizer).
+  const rowIndexOf = React.useCallback(
+    (optIdx: number) => rows.findIndex((r) => r.kind === "option" && r.flatIndex === optionRows[optIdx]?.flatIndex),
+    [rows, optionRows],
+  )
+
+  const firstEnabled = React.useCallback(() => {
+    const i = optionRows.findIndex((r) => !r.option.disabled)
+    return i === -1 ? null : i
+  }, [optionRows])
+
   const [activeIdx, setActiveIdx] = React.useState<number | null>(null)
   const parentRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    if (!onActiveIdChange) return
-    if (activeIdx === null || !idPrefix) {
-      onActiveIdChange(undefined)
-    } else {
-      const row = optionRows[activeIdx]
-      if (row) onActiveIdChange(`${idPrefix}opt${String(row.option.value)}`)
-    }
-  }, [activeIdx, optionRows, idPrefix, onActiveIdChange])
 
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: (i) => (rows[i].kind === "group" ? 28 : itemHeight),
-    overscan: 5,
+    overscan: 8,
+    enabled: virtual,
   })
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault()
-      setActiveIdx((prev) => {
-        const next = prev === null ? 0 : Math.min(prev + 1, optionRows.length - 1)
-        const rowIdx = rows.findIndex(
-          (r) => r.kind === "option" && r.flatIndex === optionRows[next]?.flatIndex,
-        )
-        if (rowIdx >= 0) virtualizer.scrollToIndex(rowIdx, { align: "auto" })
-        return next
-      })
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault()
-      setActiveIdx((prev) => {
-        const next = prev === null ? 0 : Math.max(prev - 1, 0)
-        const rowIdx = rows.findIndex(
-          (r) => r.kind === "option" && r.flatIndex === optionRows[next]?.flatIndex,
-        )
-        if (rowIdx >= 0) virtualizer.scrollToIndex(rowIdx, { align: "auto" })
-        return next
-      })
-    } else if (e.key === "Enter" && activeIdx !== null) {
+  const scrollToOptIdx = React.useCallback(
+    (optIdx: number) => {
+      if (!virtual) {
+        const el = parentRef.current?.querySelector<HTMLElement>(`[data-opt-idx="${optIdx}"]`)
+        el?.scrollIntoView({ block: "nearest" })
+        return
+      }
+      const ri = rowIndexOf(optIdx)
+      if (ri >= 0) virtualizer.scrollToIndex(ri, { align: "auto" })
+    },
+    [virtual, rowIndexOf, virtualizer],
+  )
+
+  // Reset active option whenever the visible set changes (e.g. after a search).
+  React.useEffect(() => {
+    setActiveIdx(defaultActiveFirstOption ? firstEnabled() : null)
+  }, [defaultActiveFirstOption, firstEnabled])
+
+  // Publish the active option id up to the combobox (aria-activedescendant).
+  React.useEffect(() => {
+    if (activeIdx === null) {
+      onActiveIdChange(undefined)
+    } else {
       const row = optionRows[activeIdx]
-      if (row && !row.option.disabled) onSelect(row.option)
+      onActiveIdChange(row ? optionId(row.option.value) : undefined)
     }
+  }, [activeIdx, optionRows, optionId, onActiveIdChange])
+
+  const move = React.useCallback(
+    (dir: 1 | -1) => {
+      setActiveIdx((prev) => {
+        const n = optionRows.length
+        if (n === 0) return null
+        let i = prev === null ? (dir > 0 ? -1 : 0) : prev
+        for (let step = 0; step < n; step++) {
+          i = (i + dir + n) % n
+          if (!optionRows[i].option.disabled) {
+            scrollToOptIdx(i)
+            return i
+          }
+        }
+        return prev
+      })
+    },
+    [optionRows, scrollToOptIdx],
+  )
+
+  const keyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        move(1)
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        move(-1)
+      } else if (e.key === "Enter") {
+        if (activeIdx !== null) {
+          const row = optionRows[activeIdx]
+          if (row && !row.option.disabled) {
+            e.preventDefault()
+            onSelect(row.option)
+          }
+        }
+      }
+    },
+    [move, activeIdx, optionRows, onSelect],
+  )
+
+  React.useImperativeHandle(ref, () => ({
+    keyDown,
+    scrollToIndex: scrollToOptIdx,
+  }), [keyDown, scrollToOptIdx])
+
+  const renderOption = (option: SelectOption<V>, flatIndex: number, optIdx: number) => {
+    const isSelected = selectedValues.includes(option.value)
+    const isActive = activeIdx === optIdx
+    return (
+      <div
+        key={String(option.value)}
+        id={optionId(option.value)}
+        data-gjs-select-option=""
+        data-opt-idx={optIdx}
+        data-selected={isSelected || undefined}
+        data-active={isActive || undefined}
+        data-disabled={option.disabled || undefined}
+        role="option"
+        aria-selected={isActive}
+        aria-disabled={option.disabled || undefined}
+        className={cn(
+          "gjs-select-option flex cursor-default select-none items-center gap-2 px-2 py-1.5 text-sm outline-none transition-colors",
+          !option.disabled && "hover:bg-accent hover:text-accent-foreground",
+          isActive && "bg-accent text-accent-foreground",
+          // Disabled: use the contrast-tuned muted token (≥4.5:1) rather than an
+          // opacity fade, which would drop below WCAG 1.4.3 minimum contrast.
+          option.disabled && "pointer-events-none text-muted-foreground",
+          option.className,
+        )}
+        onMouseEnter={() => !option.disabled && setActiveIdx(optIdx)}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          if (!option.disabled) onSelect(option)
+        }}
+      >
+        {optionRender ? (
+          optionRender(option, { index: flatIndex })
+        ) : (
+          <>
+            {isMultiple && (
+              <span
+                data-gjs-select-option-check=""
+                className={cn(
+                  "gjs-select-option-check inline-flex size-4 shrink-0 items-center justify-center",
+                  "rounded border border-border transition-colors",
+                  isSelected && "border-primary bg-primary text-primary-foreground",
+                )}
+              >
+                {isSelected && <Check className="size-3" />}
+              </span>
+            )}
+            <span className="flex-1 truncate">{option.label}</span>
+            {!isMultiple && isSelected && (
+              <span
+                data-gjs-select-option-check=""
+                className="gjs-select-option-check ml-auto shrink-0 text-primary"
+              >
+                {menuItemSelectedIcon ?? <Check className="size-4" />}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    )
   }
 
-  return (
+  const renderGroupLabel = (label: React.ReactNode, key: React.Key) => (
     <div
-      ref={parentRef}
-      id={listboxId}
-      data-gjs-select-virtual-list=""
-      className="gjs-select-virtual-list overflow-y-auto overscroll-contain focus-visible:outline-none"
-      style={{ height: listHeight }}
-      tabIndex={0}
-      role="listbox"
-      aria-multiselectable={isMultiple || undefined}
-      onKeyDown={handleKeyDown}
+      key={key}
+      data-gjs-select-option-group-label=""
+      className="gjs-select-option-group-label flex items-center px-2 py-1 text-xs font-medium text-muted-foreground"
     >
-      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-        {virtualizer.getVirtualItems().map((vItem) => {
-          const row = rows[vItem.index]
-          const style: React.CSSProperties = {
-            position: "absolute",
-            top: vItem.start,
-            left: 0,
-            right: 0,
-            height: vItem.size,
-          }
-          if (row.kind === "group") {
+      {label}
+    </div>
+  )
+
+  // Common container attributes for both windowed and full rendering.
+  const listProps = {
+    ref: parentRef,
+    id: listboxId,
+    role: "listbox" as const,
+    "aria-multiselectable": isMultiple || undefined,
+    tabIndex: 0,
+    onKeyDown: keyDown,
+  }
+
+  if (virtual) {
+    return (
+      <div
+        {...listProps}
+        data-gjs-select-virtual-list=""
+        className="gjs-select-virtual-list overflow-y-auto overscroll-contain focus-visible:outline-none"
+        style={{ height: listHeight }}
+      >
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((vItem) => {
+            const row = rows[vItem.index]
+            const style: React.CSSProperties = {
+              position: "absolute",
+              top: vItem.start,
+              left: 0,
+              right: 0,
+              height: vItem.size,
+            }
+            if (row.kind === "group") {
+              return (
+                <div key={vItem.key} style={style}>
+                  {renderGroupLabel(row.label, vItem.key)}
+                </div>
+              )
+            }
+            const optIdx = optionRows.findIndex((r) => r.flatIndex === row.flatIndex)
             return (
-              <div
-                key={vItem.key}
-                data-gjs-select-option-group-label=""
-                style={style}
-                className="gjs-select-option-group-label flex items-center px-2 py-1 text-xs font-medium text-muted-foreground"
-              >
-                {row.label}
+              <div key={vItem.key} style={style}>
+                {renderOption(row.option, row.flatIndex, optIdx)}
               </div>
             )
-          }
-          const { option, flatIndex } = row
-          const isSelected = selectedValues.includes(option.value)
-          const isActive = optionRows[activeIdx ?? -1]?.flatIndex === flatIndex
-          return (
-            <div
-              key={vItem.key}
-              id={idPrefix ? `${idPrefix}opt${String(option.value)}` : undefined}
-              data-gjs-select-option=""
-              data-selected={isSelected || undefined}
-              data-active={isActive || undefined}
-              data-disabled={option.disabled || undefined}
-              role="option"
-              aria-selected={isSelected}
-              style={style}
-              className={cn(
-                "gjs-select-option flex cursor-default select-none items-center gap-2 px-2 py-1.5 text-sm outline-none transition-colors",
-                !option.disabled && "hover:bg-accent hover:text-accent-foreground",
-                isActive && "bg-accent text-accent-foreground",
-                option.disabled && "pointer-events-none opacity-50",
-              )}
-              onMouseDown={(e) => {
-                e.preventDefault()
-                if (!option.disabled) onSelect(option)
-              }}
-            >
-              {optionRender ? (
-                optionRender(option, { index: flatIndex })
-              ) : (
-                <>
-                  {isMultiple && (
-                    <span
-                      data-gjs-select-option-check=""
-                      className={cn(
-                        "gjs-select-option-check inline-flex size-4 shrink-0 items-center justify-center",
-                        "rounded border border-border transition-colors",
-                        isSelected && "border-primary bg-primary text-primary-foreground",
-                      )}
-                    >
-                      {isSelected && <Check className="size-3" />}
-                    </span>
-                  )}
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {!isMultiple && isSelected && (
-                    <span
-                      data-gjs-select-option-check=""
-                      className="gjs-select-option-check ml-auto shrink-0 text-primary"
-                    >
-                      {menuItemSelectedIcon ?? <Check className="size-4" />}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          )
-        })}
+          })}
+        </div>
       </div>
+    )
+  }
+
+  // Non-virtual: render every row in real DOM (no windowing) so small lists keep
+  // all options present in the DOM (no off-screen culling).
+  let optCursor = 0
+  return (
+    <div
+      {...listProps}
+      data-gjs-select-list=""
+      className="gjs-select-list overflow-y-auto overscroll-contain focus-visible:outline-none"
+      style={{ maxHeight: listHeight }}
+    >
+      {rows.map((row, i) =>
+        row.kind === "group"
+          ? renderGroupLabel(row.label, `g${i}`)
+          : renderOption(row.option, row.flatIndex, optCursor++),
+      )}
     </div>
   )
 }
 
+const OptionList = React.forwardRef(OptionListInner) as <V extends SelectValue>(
+  props: OptionListProps<V> & { ref?: React.Ref<OptionListHandle> },
+) => React.ReactElement
+
 // ─── Select ───────────────────────────────────────────────────────────────────
 
-export function Select<V extends SelectValue = string>({
-  value: valueProp,
-  defaultValue,
-  onChange,
-  options: optionsProp = [],
-  mode,
-  showSearch: showSearchProp,
-  searchValue: searchValueProp,
-  defaultSearchValue = "",
-  onSearch,
-  filterOption,
-  optionFilterProp = "label",
-  placeholder = "Select...",
-  notFoundContent = "No options",
-  loading = false,
-  disabled = false,
-  allowClear = false,
-  size = "middle",
-  status,
-  variant = "outlined",
-  maxTagCount,
-  maxTagPlaceholder,
-  tagRender,
-  optionRender,
-  labelRender,
-  dropdownRender,
-  onSelect: onSelectProp,
-  onDeselect: onDeselectProp,
-  onClear,
-  onFocus,
-  onBlur,
-  onDropdownVisibleChange,
-  open: openProp,
-  defaultOpen = false,
-  className,
-  style,
-  dropdownClassName,
-  dropdownStyle,
-  suffixIcon,
-  clearIcon,
-  removeIcon,
-  menuItemSelectedIcon,
-  labelInValue = false,
-  fieldNames,
-  placement = "bottomLeft",
-  popupMatchSelectWidth = true,
-  listHeight = 256,
-  virtual = false,
-  autoClearSearchValue = true,
-  id,
-  "aria-label": ariaLabel,
-  "aria-labelledby": ariaLabelledby,
-  "aria-invalid": ariaInvalid,
-  "aria-describedby": ariaDescribedby,
-  "data-testid": dataTestId,
-}: SelectProps<V>) {
+function SelectInner<V extends SelectValue = string>(
+  {
+    value: valueProp,
+    defaultValue,
+    onChange,
+    options: optionsProp = [],
+    mode,
+    showSearch: showSearchProp,
+    searchValue: searchValueProp,
+    defaultSearchValue = "",
+    onSearch,
+    filterOption,
+    optionFilterProp = "label",
+    placeholder = "Select...",
+    notFoundContent = "No options",
+    loading = false,
+    disabled = false,
+    allowClear = false,
+    size = "middle",
+    status,
+    variant = "outlined",
+    maxTagCount,
+    maxTagPlaceholder,
+    tagRender,
+    optionRender,
+    labelRender,
+    dropdownRender,
+    onSelect: onSelectProp,
+    onDeselect: onDeselectProp,
+    onClear,
+    onFocus,
+    onBlur,
+    onDropdownVisibleChange,
+    open: openProp,
+    defaultOpen = false,
+    className,
+    style,
+    dropdownClassName,
+    dropdownStyle,
+    suffixIcon,
+    clearIcon,
+    removeIcon,
+    menuItemSelectedIcon,
+    labelInValue = false,
+    fieldNames,
+    placement = "bottomLeft",
+    popupMatchSelectWidth = true,
+    listHeight = 256,
+    virtual = false,
+    autoClearSearchValue = true,
+    id,
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledby,
+    "aria-invalid": ariaInvalid,
+    "aria-describedby": ariaDescribedby,
+    "data-testid": dataTestId,
+  }: SelectProps<V>,
+  ref: React.Ref<SelectRef>,
+) {
   const isMultiple = mode === "multiple" || mode === "tags"
   const showSearch = showSearchProp ?? isMultiple
 
@@ -574,7 +627,6 @@ export function Select<V extends SelectValue = string>({
   const toArray = React.useCallback((v: V | V[] | null | undefined): V[] => {
     if (v == null) return []
     if (Array.isArray(v)) return v
-    // labelInValue: extract raw value from {label,value} object
     if (labelInValue && typeof v === "object") return [(v as { value: V }).value]
     return [v]
   }, [labelInValue])
@@ -584,54 +636,23 @@ export function Select<V extends SelectValue = string>({
 
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const triggerRef = React.useRef<HTMLDivElement>(null)
-  const commandRootRef = React.useRef<HTMLDivElement>(null)
-  // Responsive maxTagCount
+  const optionListRef = React.useRef<OptionListHandle>(null)
   const tagsAreaRef = React.useRef<HTMLDivElement>(null)
   const [responsiveMax, setResponsiveMax] = React.useState<number>(9999)
 
   // ── A11y IDs ────────────────────────────────────────────────────────────────
   const baseId = React.useId()
-  // listboxId: our controlled ID for the virtual path; cmdk path uses DOM-read ID
   const listboxId = `${baseId}lb`
   const optId = React.useCallback((v: V): string => `${baseId}opt${String(v)}`, [baseId])
   const [activeDescendant, setActiveDescendant] = React.useState<string | undefined>()
-  // cmListboxId: actual ID assigned by Radix to CommandList (can't be overridden via prop)
-  const [cmListboxId, setCmListboxId] = React.useState<string | undefined>()
 
-  // For cmdk path: read actual DOM IDs after the portal mounts, then observe aria-selected
-  // changes to sync the active option to aria-activedescendant on our trigger.
-  // (cmdk v1 does NOT set aria-activedescendant; it marks active items with aria-selected="true")
-  React.useEffect(() => {
-    if (!open) {
-      setActiveDescendant(undefined)
-      return
-    }
-    let obs: MutationObserver | undefined
-    // setTimeout(0) ensures the Portal has committed to the DOM and refs are attached
-    const t = setTimeout(() => {
-      const root = commandRootRef.current
-      if (!root) return
-
-      const listEl = root.querySelector("[data-gjs-select-list]") as HTMLElement | null
-      if (listEl?.id) setCmListboxId(listEl.id)
-
-      const syncActive = () => {
-        const activeItem = root.querySelector(
-          "[cmdk-item][aria-selected=true]",
-        ) as HTMLElement | null
-        setActiveDescendant(activeItem?.id ?? undefined)
-      }
-
-      obs = new MutationObserver(syncActive)
-      obs.observe(root, { attributes: true, attributeFilter: ["aria-selected"], subtree: true })
-      syncActive()
-    }, 0)
-
-    return () => {
-      clearTimeout(t)
-      obs?.disconnect()
-    }
-  }, [open])
+  // ── Imperative handle (antd BaseSelectRef parity) ─────────────────────────────
+  React.useImperativeHandle(ref, () => ({
+    focus: (options) => triggerRef.current?.focus(options),
+    blur: () => triggerRef.current?.blur(),
+    scrollTo: (index) => optionListRef.current?.scrollToIndex(index),
+    nativeElement: triggerRef.current,
+  }), [])
 
   // ── Options ─────────────────────────────────────────────────────────────────
   const normalizedOptions = React.useMemo(
@@ -641,7 +662,6 @@ export function Select<V extends SelectValue = string>({
 
   const allFlat = React.useMemo(() => flattenOptions(normalizedOptions), [normalizedOptions])
 
-  // O(1) lookup map
   const allFlatMap = React.useMemo(
     () => new Map<V, SelectOption<V>>(allFlat.map((o) => [o.value, o])),
     [allFlat],
@@ -677,13 +697,18 @@ export function Select<V extends SelectValue = string>({
     return run(normalizedOptions)
   }, [normalizedOptions, searchValue, filterOption, optionFilterProp])
 
+  // Clear the active descendant when the popup closes or has no matches (an
+  // empty list unmounts OptionList, so it cannot clear it itself).
+  React.useEffect(() => {
+    if (!open || filteredOptions.length === 0) setActiveDescendant(undefined)
+  }, [open, filteredOptions.length])
+
   // ── Responsive maxTagCount ──────────────────────────────────────────────────
   React.useLayoutEffect(() => {
     if (maxTagCount !== "responsive") return
     const area = tagsAreaRef.current
     if (!area) return
     const measure = () => {
-      // Available width: area width minus suffix icons (~52px) minus padding
       const avail = area.clientWidth - 52
       let used = 0
       let count = 0
@@ -799,11 +824,28 @@ export function Select<V extends SelectValue = string>({
     const existing = allFlat.find(
       (o) => nodeToString(o.label).toLowerCase() === searchValue.toLowerCase(),
     )
-    // tags mode always produces string values from user input.
-    // V must be `string` for mode="tags" — no unknown escape needed.
     const newValue = (searchValue as SelectValue) as V
     handleSelect(existing ?? { label: searchValue, value: newValue })
   }, [mode, searchValue, allFlat, handleSelect])
+
+  const handleSearchKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        optionListRef.current?.keyDown(e)
+      } else if (e.key === "Enter") {
+        // An open option list claims Enter to pick the active option; with no
+        // matches (tags mode) Enter turns the typed text into a new tag.
+        if (filteredOptions.length > 0) optionListRef.current?.keyDown(e)
+        else handleTagsEnter()
+      } else if (e.key === "Escape") {
+        setOpen(false)
+        triggerRef.current?.focus()
+      } else if (e.key === "Backspace" && searchValue === "" && isMultiple) {
+        removeLastTag()
+      }
+    },
+    [filteredOptions.length, handleTagsEnter, setOpen, searchValue, isMultiple, removeLastTag],
+  )
 
   const handleTriggerKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -860,128 +902,82 @@ export function Select<V extends SelectValue = string>({
   }, [isMultiple, allFlatMap, selectedValues, labelRender])
 
   const { side, align } = SIDE_ALIGN[placement]
+  const itemHeight = size === "small" ? 26 : size === "large" ? 40 : 32
 
-  // ── cmdk dropdown ────────────────────────────────────────────────────────────
-  const cmMenuEl = React.useMemo((): React.ReactElement => (
-    <Command
-      ref={commandRootRef}
-      data-gjs-select-command=""
-      className="flex flex-col"
-      shouldFilter={false}
-      loop
-    >
+  // ── Dropdown menu ─────────────────────────────────────────────────────────────
+  const menuEl: React.ReactElement = (
+    <div data-gjs-select-menu="" className="flex flex-col">
       <div
         data-gjs-select-search-wrapper=""
         className={cn(
           "gjs-select-search-wrapper flex items-center border-b border-border px-3",
-          // Use h-0/overflow-hidden instead of hidden (display:none) so the
-          // input remains focusable for keyboard navigation (WCAG 2.1.1).
+          // Keep the input mounted + focusable even when search is off (WCAG
+          // 2.1.1): h-0/overflow-hidden hides it visually without display:none.
           !showSearch && !isMultiple && "h-0 overflow-hidden border-b-0 px-0",
         )}
       >
-        <CommandInput
+        <input
           ref={searchInputRef}
           data-gjs-select-search=""
           className="gjs-select-search h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Search..."
+          aria-label="Search"
           value={searchValue}
-          onValueChange={handleSearch}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleTagsEnter()
-            if (e.key === "Escape") {
-              setOpen(false)
-              triggerRef.current?.focus()
-            }
-            if (e.key === "Backspace" && searchValue === "" && isMultiple) {
-              removeLastTag()
-            }
-          }}
+          onChange={(e) => handleSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
         />
       </div>
-      <CommandList
-        data-gjs-select-list=""
-        className="gjs-select-list overflow-y-auto overscroll-contain"
-        style={{ maxHeight: listHeight }}
-      >
-        {filteredOptions.length === 0 && (
-          <CommandEmpty
-            data-gjs-select-empty=""
-            className="gjs-select-empty py-6 text-center text-sm text-muted-foreground"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="size-4 animate-spin" />
-                Loading…
-              </span>
-            ) : (
-              notFoundContent
-            )}
-          </CommandEmpty>
-        )}
-        {filteredOptions.map((item, gi) =>
-          isOptGroup(item) ? (
-            <CommandGroup
-              key={gi}
-              data-gjs-select-option-group=""
-              heading={item.label}
-              className={cn(
-                "gjs-select-option-group",
-                "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5",
-                "[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium",
-                "[&_[cmdk-group-heading]]:text-muted-foreground",
-              )}
-            >
-              {item.options.map((opt, oi) => (
-                <OptionItem
-                  key={String(opt.value)}
-                  option={opt}
-                  index={oi}
-                  isSelected={selectedValues.includes(opt.value)}
-                  isMultiple={isMultiple}
-                  onSelect={handleSelect}
-                  optionRender={optionRender}
-                  menuItemSelectedIcon={menuItemSelectedIcon}
-                />
-              ))}
-            </CommandGroup>
+      {filteredOptions.length === 0 ? (
+        <div
+          data-gjs-select-empty=""
+          className="gjs-select-empty py-6 text-center text-sm text-muted-foreground"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
+              Loading…
+            </span>
           ) : (
-            <OptionItem
-              key={String(item.value)}
-              option={item}
-              index={gi}
-              isSelected={selectedValues.includes(item.value)}
-              isMultiple={isMultiple}
-              onSelect={handleSelect}
-              optionRender={optionRender}
-              menuItemSelectedIcon={menuItemSelectedIcon}
-            />
-          ),
-        )}
-      </CommandList>
-    </Command>
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [filteredOptions, selectedValues, isMultiple, showSearch, searchValue, loading,
-      listHeight, notFoundContent, handleSearch, handleSelect, handleTagsEnter,
-      optionRender, menuItemSelectedIcon, removeLastTag])
+            notFoundContent
+          )}
+        </div>
+      ) : (
+        <OptionList<V>
+          ref={optionListRef}
+          items={filteredOptions}
+          selectedValues={selectedValues}
+          isMultiple={isMultiple}
+          onSelect={handleSelect}
+          virtual={virtual}
+          listHeight={listHeight}
+          itemHeight={itemHeight}
+          optionRender={optionRender}
+          menuItemSelectedIcon={menuItemSelectedIcon}
+          defaultActiveFirstOption
+          listboxId={listboxId}
+          optionId={optId}
+          onActiveIdChange={setActiveDescendant}
+        />
+      )}
+    </div>
+  )
 
-  const dropdownContent = dropdownRender ? dropdownRender(cmMenuEl) : cmMenuEl
+  const dropdownContent = dropdownRender ? dropdownRender(menuEl) : menuEl
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    // KEY FIX: Popover.Anchor instead of Popover.Trigger avoids React portal
-    // event bubbling from CommandItem clicks reaching a Trigger toggle handler.
-    <Popover.Root
-      open={open}
-      onOpenChange={(next) => !disabled && setOpen(next)}
-    >
+    <Popover.Root open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
       <Popover.Anchor asChild>
         <div
-          ref={tagsAreaRef}
+          ref={(node) => {
+            tagsAreaRef.current = node
+            triggerRef.current = node
+          }}
           id={id}
           role="combobox"
           aria-expanded={open}
           aria-haspopup="listbox"
-          aria-controls={virtual ? listboxId : cmListboxId}
+          aria-controls={listboxId}
           aria-activedescendant={activeDescendant}
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledby}
@@ -1009,7 +1005,6 @@ export function Select<V extends SelectValue = string>({
             if (!disabled) setOpen(!open)
           }}
         >
-          {/* Multiple mode: visible tags */}
           {isMultiple &&
             visibleTags.map(({ value, label, disabled: td }) =>
               tagRender ? (
@@ -1032,7 +1027,6 @@ export function Select<V extends SelectValue = string>({
               ),
             )}
 
-          {/* Multiple mode: overflow indicator */}
           {overflowTags.length > 0 && (
             <span
               data-gjs-select-overflow-tag=""
@@ -1048,7 +1042,6 @@ export function Select<V extends SelectValue = string>({
             </span>
           )}
 
-          {/* Single mode: value or placeholder */}
           {!isMultiple && (
             <span
               data-gjs-select-value=""
@@ -1061,7 +1054,6 @@ export function Select<V extends SelectValue = string>({
             </span>
           )}
 
-          {/* Multiple mode: empty placeholder */}
           {isMultiple && selectedValues.length === 0 && (
             <span
               data-gjs-select-placeholder=""
@@ -1071,7 +1063,6 @@ export function Select<V extends SelectValue = string>({
             </span>
           )}
 
-          {/* Suffix area */}
           <span
             data-gjs-select-suffix=""
             className="gjs-select-suffix ml-auto flex shrink-0 items-center gap-1 pl-1"
@@ -1126,13 +1117,9 @@ export function Select<V extends SelectValue = string>({
           }}
           onOpenAutoFocus={(e) => {
             e.preventDefault()
-            if (showSearch || isMultiple) searchInputRef.current?.focus()
+            searchInputRef.current?.focus()
           }}
           onPointerDownOutside={(e) => {
-            // Prevent DismissableLayer from dismissing when clicking the anchor (trigger).
-            // With Popover.Anchor (vs Trigger), Radix doesn't automatically exclude the
-            // anchor element from dismiss detection, causing a race condition where the
-            // newly-mounted DismissableLayer catches the same pointer event that opened it.
             if (tagsAreaRef.current?.contains(e.target as Node)) {
               e.preventDefault()
             }
@@ -1148,68 +1135,13 @@ export function Select<V extends SelectValue = string>({
             dropdownClassName,
           )}
         >
-          {virtual ? (
-            <>
-              {(showSearch || isMultiple) && (
-                <div
-                  data-gjs-select-search-wrapper=""
-                  className="gjs-select-search-wrapper flex items-center border-b border-border px-3"
-                >
-                  <input
-                    ref={searchInputRef}
-                    data-gjs-select-search=""
-                    className="gjs-select-search h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-                    placeholder="Search..."
-                    value={searchValue}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleTagsEnter()
-                      if (e.key === "Escape") {
-                        setOpen(false)
-                        triggerRef.current?.focus()
-                      }
-                      if (e.key === "Backspace" && searchValue === "" && isMultiple) {
-                        removeLastTag()
-                      }
-                    }}
-                  />
-                </div>
-              )}
-              {filteredOptions.length === 0 ? (
-                <div
-                  data-gjs-select-empty=""
-                  className="gjs-select-empty py-6 text-center text-sm text-muted-foreground"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="size-4 animate-spin" />
-                      Loading…
-                    </span>
-                  ) : (
-                    notFoundContent
-                  )}
-                </div>
-              ) : (
-                <VirtualList
-                  items={filteredOptions}
-                  selectedValues={selectedValues}
-                  isMultiple={isMultiple}
-                  onSelect={handleSelect}
-                  listHeight={listHeight}
-                  itemHeight={size === "small" ? 26 : size === "large" ? 40 : 32}
-                  optionRender={optionRender}
-                  menuItemSelectedIcon={menuItemSelectedIcon}
-                  listboxId={listboxId}
-                  idPrefix={baseId}
-                  onActiveIdChange={setActiveDescendant}
-                />
-              )}
-            </>
-          ) : (
-            dropdownContent
-          )}
+          {dropdownContent}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
   )
 }
+
+export const Select = React.forwardRef(SelectInner) as <V extends SelectValue = string>(
+  props: SelectProps<V> & { ref?: React.Ref<SelectRef> },
+) => React.ReactElement

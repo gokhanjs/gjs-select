@@ -9,7 +9,6 @@
       "description": "A feature-rich Select component built on Radix Popover + cmdk + @tanstack/react-virtual.",
       "dependencies": [
         "radix-ui",
-        "cmdk",
         "@tanstack/react-virtual",
         "class-variance-authority",
         "lucide-react"
