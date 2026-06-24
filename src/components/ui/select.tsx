@@ -4,7 +4,7 @@ import * as React from "react"
 import { cva } from "class-variance-authority"
 import { Popover } from "radix-ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Check, ChevronDown, X, Loader2 } from "lucide-react"
+import { Check, ChevronDown, Search, X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ function OptionListInner<V extends SelectValue>(
         aria-selected={isActive}
         aria-disabled={disabled || undefined}
         className={cn(
-          "gjs-select-option flex cursor-default select-none items-center gap-2 px-3 py-1.5 text-sm outline-none transition-colors",
+          "gjs-select-option flex cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-none transition-colors",
           !disabled && "hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-accent text-accent-foreground",
           // Disabled: use the contrast-tuned muted token (≥4.5:1) rather than an
@@ -526,7 +526,7 @@ function OptionListInner<V extends SelectValue>(
       <div
         {...listProps}
         data-gjs-select-virtual-list=""
-        className="gjs-select-virtual-list overflow-y-auto overscroll-contain focus-visible:outline-none"
+        className="gjs-select-virtual-list overflow-y-auto overscroll-contain p-1 focus-visible:outline-none"
         style={{ height: listHeight }}
       >
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
@@ -565,7 +565,7 @@ function OptionListInner<V extends SelectValue>(
     <div
       {...listProps}
       data-gjs-select-list=""
-      className="gjs-select-list overflow-y-auto overscroll-contain focus-visible:outline-none"
+      className="gjs-select-list overflow-y-auto overscroll-contain p-1 focus-visible:outline-none"
       style={{ maxHeight: listHeight }}
     >
       {rows.map((row, i) =>
@@ -723,6 +723,10 @@ function SelectInner<V extends SelectValue = string>(
       setPopupContainer(getPopupContainer(triggerRef.current))
     }
   }, [getPopupContainer])
+
+  // antd parity: the clear icon replaces the arrow only while the control is
+  // hovered (mirrors antd's `:hover .ant-select-clear`).
+  const [hovered, setHovered] = React.useState(false)
 
   // ── Options ─────────────────────────────────────────────────────────────────
   const normalizedOptions = React.useMemo(
@@ -1020,7 +1024,10 @@ function SelectInner<V extends SelectValue = string>(
   const overflowTags = effectiveMax !== undefined ? allTags.slice(effectiveMax) : []
 
   const hasValue = selectedValues.length > 0
-  const showClear = allowClear && hasValue && !disabled && !loading
+  // antd parity: one icon slot. Clear takes over on hover when clearable; while
+  // actively searching the arrow becomes a search icon; otherwise the arrow.
+  const showClear = allowClear && hasValue && !disabled && !loading && hovered
+  const showSearchIcon = showSearch && open && !suffixIcon
 
   const singleLabel = React.useMemo(() => {
     if (isMultiple) return null
@@ -1109,13 +1116,22 @@ function SelectInner<V extends SelectValue = string>(
           style={style}
           className={cn(
             triggerVariants({ variant, size, status: status ?? "none" }),
+            // antd parity: the multiple control hugs its tags (≈4px) vs the
+            // single control's roomier inset.
+            isMultiple && "px-1",
             disabled && "cursor-not-allowed opacity-50 pointer-events-none",
             className,
           )}
           onFocus={onFocus}
           onBlur={onBlur}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
+          onMouseEnter={(e) => {
+            setHovered(true)
+            onMouseEnter?.(e)
+          }}
+          onMouseLeave={(e) => {
+            setHovered(false)
+            onMouseLeave?.(e)
+          }}
           onMouseDown={onMouseDownProp}
           onKeyUp={onKeyUp}
           onKeyDown={(e) => {
@@ -1226,22 +1242,26 @@ function SelectInner<V extends SelectValue = string>(
                   ? "min-w-10 flex-1"
                   : searchValue
                     ? "min-w-0 flex-1"
-                    : "absolute inset-0 size-full cursor-default opacity-0",
+                    : showSearch && open
+                      // Open + searchable: keep the input visible (transparent) so
+                      // its text caret shows over the value/placeholder — signals
+                      // the field is typable (antd parity).
+                      ? "absolute inset-0 size-full"
+                      : "absolute inset-0 size-full cursor-default opacity-0",
               )}
             />
           </span>
 
           <span
             data-gjs-select-suffix=""
-            className="gjs-select-suffix ms-auto flex shrink-0 items-center gap-1 ps-1"
+            className="gjs-select-suffix ms-auto flex shrink-0 items-center ps-1"
           >
-            {loading && (
+            {loading ? (
               <Loader2
                 data-gjs-select-loading=""
                 className="gjs-select-loading size-4 animate-spin text-muted-foreground"
               />
-            )}
-            {showClear && (
+            ) : showClear ? (
               <span
                 data-gjs-select-clear=""
                 role="button"
@@ -1249,19 +1269,20 @@ function SelectInner<V extends SelectValue = string>(
                 onMouseDown={handleClear}
                 className="gjs-select-clear inline-flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
               >
-                {clearIcon ?? <X className="size-3.5" />}
+                {clearIcon ?? <X className="size-4" />}
+              </span>
+            ) : (
+              <span
+                data-gjs-select-arrow=""
+                aria-hidden
+                className={cn(
+                  "gjs-select-arrow inline-flex items-center text-muted-foreground transition-transform duration-200",
+                  open && !showSearchIcon && "rotate-180",
+                )}
+              >
+                {suffixIcon ?? (showSearchIcon ? <Search className="size-4" /> : <ChevronDown className="size-4" />)}
               </span>
             )}
-            <span
-              data-gjs-select-arrow=""
-              aria-hidden
-              className={cn(
-                "gjs-select-arrow inline-flex items-center text-muted-foreground transition-transform duration-200",
-                open && "rotate-180",
-              )}
-            >
-              {suffixIcon ?? <ChevronDown className="size-4" />}
-            </span>
           </span>
         </div>
       </Popover.Anchor>
