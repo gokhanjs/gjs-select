@@ -433,20 +433,10 @@ function OptionListInner<V extends SelectValue>(
           optionRender(option, { index: flatIndex })
         ) : (
           <>
-            {isMultiple && (
-              <span
-                data-gjs-select-option-check=""
-                className={cn(
-                  "gjs-select-option-check inline-flex size-4 shrink-0 items-center justify-center",
-                  "rounded border border-border transition-colors",
-                  isSelected && "border-primary bg-primary text-primary-foreground",
-                )}
-              >
-                {isSelected && <Check className="size-3" />}
-              </span>
-            )}
             <span className="flex-1 truncate">{option.label}</span>
-            {!isMultiple && isSelected && (
+            {/* antd parity: a selected option (single OR multiple) shows a
+                borderless check on the trailing edge — no left checkbox box. */}
+            {isSelected && (
               <span
                 data-gjs-select-option-check=""
                 className="gjs-select-option-check ml-auto shrink-0 text-primary"
@@ -830,6 +820,11 @@ function SelectInner<V extends SelectValue = string>(
 
   const handleSearchKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // The input sits inside the trigger, so its keydowns bubble to
+      // handleTriggerKeyDown. Stop them: when the input has focus its handler is
+      // authoritative (otherwise Enter would re-open after select, Space would
+      // open instead of typing a space, etc.).
+      e.stopPropagation()
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         optionListRef.current?.keyDown(e)
       } else if (e.key === "Enter") {
@@ -850,11 +845,10 @@ function SelectInner<V extends SelectValue = string>(
   const handleTriggerKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (disabled) return
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault()
-        setOpen(true)
-        setTimeout(() => searchInputRef.current?.focus(), 0)
-      } else if (e.key === "ArrowDown") {
+      if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+        // Open and move focus into the selector's search input so subsequent
+        // arrows/Enter drive the option list. The onFocusOutside guard keeps
+        // this focus (in the anchor) from dismissing the freshly-opened popup.
         e.preventDefault()
         setOpen(true)
         setTimeout(() => searchInputRef.current?.focus(), 0)
@@ -905,28 +899,10 @@ function SelectInner<V extends SelectValue = string>(
   const itemHeight = size === "small" ? 26 : size === "large" ? 40 : 32
 
   // ── Dropdown menu ─────────────────────────────────────────────────────────────
+  // antd parity: the search input lives in the selector (trigger), not here —
+  // the popup is purely the option list.
   const menuEl: React.ReactElement = (
     <div data-gjs-select-menu="" className="flex flex-col">
-      <div
-        data-gjs-select-search-wrapper=""
-        className={cn(
-          "gjs-select-search-wrapper flex items-center border-b border-border px-3",
-          // Keep the input mounted + focusable even when search is off (WCAG
-          // 2.1.1): h-0/overflow-hidden hides it visually without display:none.
-          !showSearch && !isMultiple && "h-0 overflow-hidden border-b-0 px-0",
-        )}
-      >
-        <input
-          ref={searchInputRef}
-          data-gjs-select-search=""
-          className="gjs-select-search h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-          placeholder="Search..."
-          aria-label="Search"
-          value={searchValue}
-          onChange={(e) => handleSearch(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-        />
-      </div>
       {filteredOptions.length === 0 ? (
         <div
           data-gjs-select-empty=""
@@ -1042,26 +1018,63 @@ function SelectInner<V extends SelectValue = string>(
             </span>
           )}
 
-          {!isMultiple && (
-            <span
-              data-gjs-select-value=""
-              className={cn(
-                "gjs-select-value flex-1 truncate",
-                !hasValue && "text-muted-foreground",
-              )}
-            >
-              {hasValue ? singleLabel : placeholder}
-            </span>
-          )}
+          {/* Selection area: the value/placeholder plus the inline search input.
+              antd parity — typing happens inside the selector, not the popup. */}
+          <span
+            data-gjs-select-selection=""
+            className="gjs-select-selection relative flex min-w-0 flex-1 items-center"
+          >
+            {/* Single value / placeholder — hidden while a query is being typed */}
+            {!isMultiple && !searchValue && (
+              <span
+                data-gjs-select-value=""
+                className={cn(
+                  "gjs-select-value min-w-0 flex-1 truncate",
+                  !hasValue && "text-muted-foreground",
+                )}
+              >
+                {hasValue ? singleLabel : placeholder}
+              </span>
+            )}
 
-          {isMultiple && selectedValues.length === 0 && (
-            <span
-              data-gjs-select-placeholder=""
-              className="gjs-select-placeholder pointer-events-none flex-1 text-muted-foreground"
-            >
-              {placeholder}
-            </span>
-          )}
+            {/* Multiple placeholder — only when nothing is selected or typed */}
+            {isMultiple && selectedValues.length === 0 && !searchValue && (
+              <span
+                data-gjs-select-placeholder=""
+                className="gjs-select-placeholder pointer-events-none absolute inset-y-0 left-0 flex items-center text-muted-foreground"
+              >
+                {placeholder}
+              </span>
+            )}
+
+            <input
+              ref={searchInputRef}
+              data-gjs-select-search=""
+              tabIndex={-1}
+              readOnly={!showSearch}
+              aria-label="Search"
+              value={searchValue}
+              onChange={(e) => handleSearch(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                // stopPropagation avoids a double toggle with the trigger onClick.
+                // A search input is for editing, so a click keeps the popup open;
+                // a plain (readonly) input acts like the selector and toggles.
+                e.stopPropagation()
+                if (disabled) return
+                setOpen(showSearch ? true : !open)
+              }}
+              className={cn(
+                "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+                isMultiple
+                  ? "min-w-[40px] flex-1"
+                  : searchValue
+                    ? "min-w-0 flex-1"
+                    : "absolute inset-0 size-full cursor-default opacity-0",
+              )}
+            />
+          </span>
 
           <span
             data-gjs-select-suffix=""
@@ -1120,6 +1133,14 @@ function SelectInner<V extends SelectValue = string>(
             searchInputRef.current?.focus()
           }}
           onPointerDownOutside={(e) => {
+            if (tagsAreaRef.current?.contains(e.target as Node)) {
+              e.preventDefault()
+            }
+          }}
+          onFocusOutside={(e) => {
+            // The search input lives in the selector (the anchor), which Radix
+            // treats as outside the popup content. Moving focus into it must not
+            // dismiss the popup (otherwise keyboard-open closes immediately).
             if (tagsAreaRef.current?.contains(e.target as Node)) {
               e.preventDefault()
             }

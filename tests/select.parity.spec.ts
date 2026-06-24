@@ -176,7 +176,8 @@ test("tokenSeparators splits typed input into multiple tags", async ({ page }) =
   expect(antdTags, `antd created ${antdTags} tags from "x,y,z,"`).toBeGreaterThanOrEqual(3)
 
   await openGjs(page, "tags")
-  const gjsInput = gjsDropdown(page, "tags").locator("[data-gjs-select-search]").first()
+  // The gjs search input now lives in the selector (trigger), antd-style.
+  const gjsInput = gjsTrigger(page, "tags").locator("[data-gjs-select-search]")
   await gjsInput.fill("x,y,z")
   await gjsInput.press(",")
   const gjsTags = await gjsTrigger(page, "tags").locator("[data-gjs-select-tag]").count()

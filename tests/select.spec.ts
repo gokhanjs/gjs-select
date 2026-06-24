@@ -15,7 +15,9 @@ function option(page: Page, label: string): Locator {
 }
 
 function searchInput(page: Page): Locator {
-  return page.locator("[data-gjs-select-search]").first()
+  // The search input now lives inside each selector (antd parity), so scope to
+  // the open select rather than grabbing the first input on the page.
+  return page.locator("[data-gjs-select-trigger][data-open] [data-gjs-select-search]")
 }
 
 async function openSelect(page: Page, nth = 0) {
@@ -212,15 +214,14 @@ test("multiple mode: removes tag via close button", async ({ page }) => {
   await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(1)
 })
 
-test("multiple mode: selected option shows checkbox", async ({ page }) => {
+test("multiple mode: selected option shows check icon", async ({ page }) => {
   await openSelect(page, 3)
   const appleOpt = option(page, "Apple")
-  // Before selecting
-  await expect(appleOpt.locator("[data-gjs-select-option-check]")).toBeVisible()
+  // Before selecting — no indicator (antd shows the check only when selected)
+  await expect(appleOpt.locator("[data-gjs-select-option-check]")).toHaveCount(0)
   await appleOpt.click()
-  // After selecting — check icon inside checkbox
-  const check = option(page, "Apple").locator("[data-gjs-select-option-check]")
-  await expect(check).toHaveAttribute("data-gjs-select-option-check", "")
+  // After selecting — the trailing check icon appears
+  await expect(option(page, "Apple").locator("[data-gjs-select-option-check]")).toBeVisible()
 })
 
 test("multiple mode: maxTagCount shows overflow indicator", async ({ page }) => {
@@ -560,7 +561,7 @@ test("Backspace in empty search removes last tag (cmdk)", async ({ page }) => {
   await page.locator("[data-gjs-select-option]").nth(1).click()
   await expect(page.locator("[data-gjs-select-tag]")).toHaveCount(2)
   // Search is empty → Backspace removes last tag
-  const search = page.locator("[data-gjs-select-search]").first()
+  const search = page.locator("[data-gjs-select-trigger][data-open] [data-gjs-select-search]")
   await search.press("Backspace")
   await expect(page.locator("[data-gjs-select-tag]")).toHaveCount(1)
 })
