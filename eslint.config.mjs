@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Git-ignored scratch dir (the landing v0 template); not shipped.
+    ".temp/**",
   ]),
 ]);
 

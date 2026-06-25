@@ -9,6 +9,7 @@ export default function TestPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const n = Math.min(parseInt(params.get("n") ?? "1000"), 10000)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only query-param read; avoids SSR hydration mismatch
     setCount(n)
   }, [])
 
