@@ -367,6 +367,9 @@ function OptionListInner<V extends SelectValue>(
   const [activeIdx, setActiveIdx] = React.useState<number | null>(null)
   const parentRef = React.useRef<HTMLDivElement>(null)
 
+  // useVirtualizer returns functions the React Compiler can't memoize — an
+  // inherent @tanstack/react-virtual limitation, not a code smell.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
@@ -670,6 +673,11 @@ function SelectInner<V extends SelectValue = string>(
   const isMultiple = mode === "multiple" || mode === "tags"
   const showSearch = showSearchProp ?? isMultiple
 
+  // ── Search state ────────────────────────────────────────────────────────────
+  // Declared before open state because setOpen() resets the query on open/close.
+  const [internalSearch, setInternalSearch] = React.useState(defaultSearchValue)
+  const searchValue = searchValueProp !== undefined ? searchValueProp : internalSearch
+
   // ── Open state ──────────────────────────────────────────────────────────────
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
   const open = openProp !== undefined ? openProp : internalOpen
@@ -692,12 +700,8 @@ function SelectInner<V extends SelectValue = string>(
         setInternalSearch("")
       }
     },
-    [openProp, onDropdownVisibleChange, autoClearSearchValue, searchValueProp, isMultiple],
+    [openProp, onDropdownVisibleChange, autoClearSearchValue, searchValueProp, isMultiple, setInternalSearch],
   )
-
-  // ── Search state ────────────────────────────────────────────────────────────
-  const [internalSearch, setInternalSearch] = React.useState(defaultSearchValue)
-  const searchValue = searchValueProp !== undefined ? searchValueProp : internalSearch
 
   // ── Value state ─────────────────────────────────────────────────────────────
   const toArray = React.useCallback((v: V | V[] | null | undefined): V[] => {
@@ -808,6 +812,7 @@ function SelectInner<V extends SelectValue = string>(
   // Clear the active descendant when the popup closes or has no matches (an
   // empty list unmounts OptionList, so it cannot clear it itself).
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional aria reset on a cold path (popup close/empty)
     if (!open || filteredOptions.length === 0) setActiveDescendant(undefined)
   }, [open, filteredOptions.length])
 
@@ -898,6 +903,7 @@ function SelectInner<V extends SelectValue = string>(
     [
       isMultiple, selectedValues, allFlatMap, onSelectProp, onDeselectProp,
       autoClearSearchValue, searchValueProp, commitChange, setOpen, maxCount,
+      setInternalSearch,
     ],
   )
 
@@ -934,7 +940,7 @@ function SelectInner<V extends SelectValue = string>(
       onClear?.()
       onChange?.(isMultiple ? ([] as V[]) : null, isMultiple ? [] : null)
     },
-    [valueProp, searchValueProp, onClear, onChange, isMultiple],
+    [valueProp, searchValueProp, onClear, onChange, isMultiple, setInternalValue, setInternalSearch],
   )
 
   const addTokens = React.useCallback(
@@ -975,7 +981,7 @@ function SelectInner<V extends SelectValue = string>(
       if (searchValueProp === undefined) setInternalSearch(value)
       onSearch?.(value)
     },
-    [isMultiple, tokenSeparators, addTokens, searchValueProp, onSearch],
+    [isMultiple, tokenSeparators, addTokens, searchValueProp, onSearch, setInternalSearch],
   )
 
   const handleTagsEnter = React.useCallback(() => {
