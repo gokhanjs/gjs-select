@@ -5,7 +5,7 @@ const DIFF_RATIO = 0.01
 
 test.describe("Visual regression — closed state", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     // Wait for fonts and layout to settle
     await page.waitForTimeout(200)
@@ -65,7 +65,7 @@ test.describe("Visual regression — closed state", () => {
 
 test.describe("Visual regression — selected state", () => {
   test("single select with value selected", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 
@@ -83,7 +83,7 @@ test.describe("Visual regression — selected state", () => {
   })
 
   test("multiple select with tags", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 
@@ -107,7 +107,7 @@ test.describe("Visual regression — selected state", () => {
 
 test.describe("Visual regression — open/dropdown state", () => {
   test("dropdown list appearance", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 
@@ -123,7 +123,7 @@ test.describe("Visual regression — open/dropdown state", () => {
   })
 
   test("dropdown with active/highlighted item", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 
@@ -137,7 +137,7 @@ test.describe("Visual regression — open/dropdown state", () => {
   })
 
   test("dropdown with option groups", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 
@@ -159,7 +159,7 @@ test.describe("Visual regression — open/dropdown state", () => {
 
 test.describe("Visual regression — hover & focus states", () => {
   test("trigger focus ring is visible", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
     await page.waitForTimeout(200)
 

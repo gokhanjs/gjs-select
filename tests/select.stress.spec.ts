@@ -9,7 +9,7 @@ const CYCLE_COUNT = 20
 
 test.describe("Stress — rapid open/close cycles", () => {
   test(`${CYCLE_COUNT} open/close cycles complete without crash`, async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     const trigger = page.locator('[data-gjs-select-trigger]:not([data-disabled])').first()
 
     for (let i = 0; i < CYCLE_COUNT; i++) {
@@ -25,7 +25,7 @@ test.describe("Stress — rapid open/close cycles", () => {
   })
 
   test(`JS heap growth stays below 50% after ${CYCLE_COUNT} cycles`, async ({ page, context }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     const client = await context.newCDPSession(page)
 
     // Force GC and capture baseline
@@ -105,7 +105,7 @@ test.describe("Stress — rapid keyboard navigation", () => {
 
 test.describe("Stress — multiple selection rapid interaction", () => {
   test("rapidly add and remove tags without crash", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     // Multiple-mode select on demo page has data-mode="multiple"
     const multiTrigger = page.locator('[data-gjs-select-trigger][data-mode="multiple"]').first()
 

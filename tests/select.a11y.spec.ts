@@ -12,7 +12,7 @@ const DISABLED_RULES: string[] = [
 
 test.describe("Accessibility — WCAG 2.1 AA (closed state)", () => {
   test("home page has no violations (all closed selects)", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
 
     const results = await new AxeBuilder({ page })
@@ -32,7 +32,7 @@ test.describe("Accessibility — WCAG 2.1 AA (closed state)", () => {
 
 test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
   test("single select dropdown has no violations", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     // Open first select
     await page.locator('[role="combobox"]').first().click()
     await page.waitForSelector('[role="listbox"], [cmdk-list]')
@@ -46,7 +46,7 @@ test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
   })
 
   test("search select dropdown has no violations", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     // Open the showSearch variant
     const searchTrigger = page.locator('[role="combobox"]').filter({ hasText: /search/i }).first()
     if ((await searchTrigger.count()) > 0) {
@@ -81,7 +81,7 @@ test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
 
 test.describe("Accessibility — error state", () => {
   test("error status select has no violations (closed)", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
 
     const results = await new AxeBuilder({ page })
       .withTags(WCAG_TAGS)
@@ -93,7 +93,7 @@ test.describe("Accessibility — error state", () => {
   })
 
   test("RHF form with validation errors has no violations", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     // Submit form without filling required fields to trigger errors
     const submitBtn = page.locator('[data-testid="rhf-form"] button[type="submit"]')
     if ((await submitBtn.count()) > 0) {
@@ -113,7 +113,7 @@ test.describe("Accessibility — error state", () => {
 
 test.describe("Accessibility — keyboard operability (WCAG 2.1.1)", () => {
   test("select is fully operable by keyboard only", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     await page.waitForLoadState("networkidle")
 
     // Tab to first combobox
@@ -144,7 +144,7 @@ test.describe("Accessibility — keyboard operability (WCAG 2.1.1)", () => {
 
 test.describe("Accessibility — screen reader attributes", () => {
   test("combobox has required ARIA attributes", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     const combobox = page.locator('[role="combobox"]').first()
 
     await expect(combobox).toHaveAttribute("aria-haspopup")
@@ -152,7 +152,7 @@ test.describe("Accessibility — screen reader attributes", () => {
   })
 
   test("aria-expanded toggles correctly", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     const combobox = page.locator('[role="combobox"]').first()
 
     await expect(combobox).toHaveAttribute("aria-expanded", "false")
@@ -163,13 +163,13 @@ test.describe("Accessibility — screen reader attributes", () => {
   })
 
   test("disabled select has aria-disabled", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     const disabled = page.locator('[role="combobox"][aria-disabled="true"]')
     await expect(disabled).toHaveCount(1)
   })
 
   test("error status has aria-invalid on combobox", async ({ page }) => {
-    await page.goto("/")
+    await page.goto("/demo")
     // Submit RHF form to trigger aria-invalid
     const form = page.locator('[data-testid="rhf-form"]')
     if ((await form.count()) > 0) {

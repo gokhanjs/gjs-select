@@ -33,7 +33,7 @@ async function closeSelect(page: Page) {
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
 })
 
 // ─── 1. Basic Rendering ───────────────────────────────────────────────────────
@@ -560,7 +560,7 @@ const rhfField = (page: import("@playwright/test").Page, name: string) =>
   rhfForm(page).locator(`[data-gjs-select-trigger]`).nth(name === "country" ? 0 : 1)
 
 test("RHF: submit without values shows Zod validation errors", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   await rhfForm(page).locator("button[type=submit]").click()
   // Both errors should appear
   const errors = page.locator("[data-gjs-select-form-error]")
@@ -570,7 +570,7 @@ test("RHF: submit without values shows Zod validation errors", async ({ page }) 
 })
 
 test("RHF: error clears after valid selection", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   await rhfForm(page).locator("button[type=submit]").click()
   await expect(page.locator("[data-gjs-select-form-error]").nth(0)).toBeVisible()
 
@@ -584,21 +584,21 @@ test("RHF: error clears after valid selection", async ({ page }) => {
 })
 
 test("RHF: status=error applied to trigger on validation error", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   await rhfForm(page).locator("button[type=submit]").click()
   await expect(page.locator("[data-gjs-select-form-error]").nth(0)).toBeVisible()
   await expect(rhfField(page, "country")).toHaveAttribute("data-status", "error")
 })
 
 test("RHF: aria-invalid set on trigger when error", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   await rhfForm(page).locator("button[type=submit]").click()
   await expect(page.locator("[data-gjs-select-form-error]").nth(0)).toBeVisible()
   await expect(rhfField(page, "country")).toHaveAttribute("aria-invalid", "true")
 })
 
 test("RHF: multiple select min/max Zod validation", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   // Select country first so only skills error remains
   await rhfField(page, "country").click()
   await page.locator("[data-gjs-select-option]").first().click()
@@ -612,7 +612,7 @@ test("RHF: multiple select min/max Zod validation", async ({ page }) => {
 // ─── 19. Keyboard tag removal ─────────────────────────────────────────────────
 
 test("Backspace on trigger removes last tag when dropdown closed", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   // Use the multiple select (index 3 on page — "Multiple")
   const multiTrigger = page.locator("[data-gjs-select-trigger]").nth(3)
   await multiTrigger.click()
@@ -627,7 +627,7 @@ test("Backspace on trigger removes last tag when dropdown closed", async ({ page
 })
 
 test("Backspace in empty search removes last tag (cmdk)", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
   const multiTrigger = page.locator("[data-gjs-select-trigger]").nth(3)
   await multiTrigger.click()
   await page.locator("[data-gjs-select-option]").nth(0).click()
@@ -640,7 +640,7 @@ test("Backspace in empty search removes last tag (cmdk)", async ({ page }) => {
 })
 
 test("RHF: valid form submits successfully", async ({ page }) => {
-  await page.goto("/")
+  await page.goto("/demo")
 
   // Select country
   await rhfField(page, "country").click()

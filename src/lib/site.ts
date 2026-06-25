@@ -1,0 +1,17 @@
+// Single source of truth for site-wide constants (links, registry URL, SEO copy).
+// The deploy domain is finalized when the Vercel URL is known — update `url`.
+
+export const site = {
+  name: "gjs-select",
+  tagline: "The Select shadcn/ui is missing",
+  description:
+    "A feature-complete, accessible Select for React and shadcn/ui — single, multiple, and tags modes, built-in search, virtualized lists, and antd-grade behavior. Install by copy-paste with the shadcn CLI.",
+  url: "https://gjs-select.vercel.app",
+  github: "https://github.com/gokhanjs/gjs-select",
+  get registry() {
+    return `${this.url}/r/gjs-select.json`
+  },
+  get installCmd() {
+    return `npx shadcn@latest add ${this.url}/r/gjs-select.json`
+  },
+} as const
