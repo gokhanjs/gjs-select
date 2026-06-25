@@ -4,6 +4,11 @@ import { SectionHeading } from "@/components/landing/section-heading"
 import { RenderModes } from "@/components/landing/examples/render-modes"
 import { AsyncSearch } from "@/components/landing/examples/async-search"
 import { ResponsiveTags } from "@/components/landing/examples/responsive-tags"
+import { VirtualList } from "@/components/landing/examples/virtual-list"
+import { CustomRender } from "@/components/landing/examples/custom-render"
+import { VariantSwitcher } from "@/components/landing/examples/variant-switcher"
+import { LabelInValue } from "@/components/landing/examples/label-in-value"
+import { SelectFormDemo } from "@/components/landing/examples/select-form-demo"
 
 function PatternBlock({
   title,
@@ -32,7 +37,7 @@ export function PatternsShowcase() {
         <SectionHeading
           eyebrow="Patterns"
           title="Real-world patterns"
-          description="Server and client rendering, debounced server-side search, and responsive tag overflow — the cases you actually ship."
+          description="Server and client rendering, 10k-row virtualization, custom rendering, variants, and a Zod-validated form — the cases you actually ship."
         />
 
         <div className="mt-10 space-y-5">
@@ -57,7 +62,42 @@ export function PatternsShowcase() {
             >
               <ResponsiveTags />
             </PatternBlock>
+
+            <PatternBlock
+              title="Virtualized 10k options"
+              description="virtual mounts only the rows in view (@tanstack/react-virtual), so a 10,000-option list opens and scrolls without jank."
+            >
+              <VirtualList />
+            </PatternBlock>
+
+            <PatternBlock
+              title="Custom option & tag rendering"
+              description="optionRender and tagRender take full React nodes — avatars, secondary text, and bespoke pills."
+            >
+              <CustomRender />
+            </PatternBlock>
+
+            <PatternBlock
+              title="Variants"
+              description='variant="outlined | filled | borderless" — switch the chrome to match the surface it sits on.'
+            >
+              <VariantSwitcher />
+            </PatternBlock>
+
+            <PatternBlock
+              title="Label in value + maxCount"
+              description="labelInValue emits { label, value } objects; maxCount caps how many tags can be selected."
+            >
+              <LabelInValue />
+            </PatternBlock>
           </div>
+
+          <PatternBlock
+            title="react-hook-form + Zod"
+            description="SelectFormField binds Select to react-hook-form with a Zod resolver — validation status, error messages, and ARIA wiring come for free."
+          >
+            <SelectFormDemo />
+          </PatternBlock>
         </div>
       </div>
     </section>
