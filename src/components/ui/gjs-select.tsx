@@ -1304,7 +1304,9 @@ function SelectInner<V extends SelectValue = string>(
                   setOpen(showSearch ? true : !open)
                 }}
                 className={cn(
-                  "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+                  // text-base keeps the focused input ≥16px on mobile so iOS Safari
+                // doesn't auto-zoom on focus; md:text-sm restores 14px desktop density.
+                "gjs-select-search bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground",
                   isMultiple
                     ? "min-w-10 flex-1"
                     : !open
