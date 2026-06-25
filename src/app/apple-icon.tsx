@@ -1,7 +1,9 @@
 import { ImageResponse } from "next/og"
 
+import { Logo } from "@/components/landing/logo"
+
 // Apple touch icon (iOS home screen). iOS applies its own corner mask, so the
-// square is full-bleed — mirrors the favicon mark: dark field, light chevron.
+// square is full-bleed — mirrors the favicon: dark field, light brand mark.
 export const size = { width: 180, height: 180 }
 export const contentType = "image/png"
 
@@ -18,18 +20,7 @@ export default function AppleIcon() {
           background: "#0a0a0a",
         }}
       >
-        <svg
-          width="120"
-          height="120"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#fafafa"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <Logo mark="#fafafa" hole="#0a0a0a" width={132} height={132} />
       </div>
     ),
     { ...size },

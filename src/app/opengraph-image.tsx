@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og"
 
+import { Logo } from "@/components/landing/logo"
 import { site } from "@/lib/site"
 
 export const alt = `${site.name} — ${site.tagline}`
@@ -23,30 +24,7 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 64,
-              height: 64,
-              borderRadius: 14,
-              background: "#fafafa",
-            }}
-          >
-            <svg
-              width="38"
-              height="38"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0a0a0a"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </div>
+          <Logo mark="#fafafa" hole="#0a0a0a" width={76} height={76} />
           <div style={{ fontSize: 36, fontWeight: 600, color: "#a1a1aa" }}>
             {site.name}
           </div>

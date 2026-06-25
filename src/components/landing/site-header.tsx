@@ -1,6 +1,7 @@
-import { ChevronsUpDown, Star } from "lucide-react"
+import { Star } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/landing/logo"
 import { ThemeToggle } from "@/components/landing/theme-toggle"
 import { site } from "@/lib/site"
 
@@ -17,8 +18,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <a href="#top" className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ChevronsUpDown className="size-4" />
+          <div className="flex size-7 items-center justify-center rounded-md ">
+            <Logo className="size-7" hole="var(--primary)" />
           </div>
           <span className="text-sm font-semibold tracking-tight">{site.name}</span>
         </a>

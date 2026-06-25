@@ -1,6 +1,7 @@
-import { ChevronsUpDown, Star } from "lucide-react"
+import { Star } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/landing/logo"
 import { site } from "@/lib/site"
 
 export function SiteFooter() {
@@ -8,8 +9,8 @@ export function SiteFooter() {
     <footer className="bg-background">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 py-12 sm:flex-row sm:px-6">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ChevronsUpDown className="size-4" />
+          <div className="flex size-7 items-center justify-center rounded-md">
+            <Logo className="size-7" hole="var(--primary)" />
           </div>
           <div>
             <p className="text-sm font-semibold">{site.name}</p>
