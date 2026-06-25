@@ -9,7 +9,7 @@ import "./globals.css"
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"] })
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] })
 
-const fullTitle = `${site.name} — ${site.tagline}`
+const fullTitle = `${site.name} — Multi-select, combobox & tags for shadcn/ui`
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
