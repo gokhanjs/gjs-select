@@ -34,6 +34,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      name: "patterns",
+      testMatch: "**/patterns.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
       name: "visual",
       testMatch: "**/select.visual.spec.ts",
       use: {

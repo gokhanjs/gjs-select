@@ -11,6 +11,7 @@
     "test:a11y": "playwright test --project=a11y",
     "test:perf": "playwright test --project=perf",
     "test:stress": "playwright test --project=stress",
+    "test:patterns": "playwright test --project=patterns",
     "test:visual": "playwright test --project=visual",
     "test:all": "playwright test",
     "test:update-snapshots": "playwright test --project=visual --update-snapshots"

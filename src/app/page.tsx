@@ -1,6 +1,7 @@
 import { Hero } from "@/components/landing/hero"
 import { Installation } from "@/components/landing/installation"
 import { JsonLd } from "@/components/landing/json-ld"
+import { PatternsShowcase } from "@/components/landing/patterns-showcase"
 import { PropsTable } from "@/components/landing/props-table"
 import { SiteFooter } from "@/components/landing/site-footer"
 import { SiteHeader } from "@/components/landing/site-header"
@@ -16,6 +17,7 @@ export default function Page() {
         <Hero />
         <Installation />
         <VariantsShowcase />
+        <PatternsShowcase />
         <UsagePlayground />
         <PropsTable />
       </main>

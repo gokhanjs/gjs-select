@@ -7,6 +7,7 @@ import { site } from "@/lib/site"
 const NAV_LINKS = [
   { label: "Installation", href: "#installation" },
   { label: "Showcase", href: "#showcase" },
+  { label: "Patterns", href: "#patterns" },
   { label: "Usage", href: "#usage" },
   { label: "API", href: "#api" },
 ]
