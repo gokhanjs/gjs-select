@@ -191,7 +191,7 @@ const SIDE_ALIGN: Record<
 
 const triggerVariants = cva(
   [
-    "relative flex w-full min-w-0 cursor-default flex-wrap items-center gap-1",
+    "relative flex w-full min-w-0 cursor-default items-center gap-1",
     "rounded-md border text-sm transition-colors duration-150 outline-none",
     "focus-within:ring-3 focus-within:ring-ring/50",
   ].join(" "),
@@ -818,7 +818,9 @@ function SelectInner<V extends SelectValue = string>(
     if (!area) return
     const total = selectedValues.length
     const measure = () => {
-      const avail = area.clientWidth - 52
+      // Reserve roughly the width of the "+N" pill so the last visible tag never
+      // sits under it. (area is the tag wrap box; the suffix is already outside.)
+      const avail = area.clientWidth - 32
       const tagEls = Array.from(area.querySelectorAll<HTMLElement>("[data-gjs-select-tag]"))
       // Refresh the width cache only when every tag is on screen; while collapsed
       // we reuse the cached widths so hidden tags still count toward the fit.
@@ -838,7 +840,9 @@ function SelectInner<V extends SelectValue = string>(
         if (used <= avail) count++
         else break
       }
-      setResponsiveMax(Math.max(count, 1))
+      // Allow 0 visible tags: when not even one fits, show only the "+N" pill
+      // (antd parity) rather than forcing a clipped first tag.
+      setResponsiveMax(count)
     }
     const ro = new ResizeObserver(measure)
     ro.observe(area)
@@ -1125,7 +1129,6 @@ function SelectInner<V extends SelectValue = string>(
       <Popover.Anchor asChild>
         <div
           ref={(node) => {
-            tagsAreaRef.current = node
             triggerRef.current = node
           }}
           id={id}
@@ -1183,115 +1186,135 @@ function SelectInner<V extends SelectValue = string>(
               {prefix}
             </span>
           )}
-          {isMultiple &&
-            visibleTags.map(({ value, label, disabled: td }) =>
-              tagRender ? (
-                tagRender({
-                  label,
-                  value,
-                  disabled: td || disabled,
-                  closable: !disabled,
-                  onClose: (e) => handleDeselect(value, e),
-                })
-              ) : (
-                <SelectTag
-                  key={String(value)}
-                  label={label}
-                  disabled={td || disabled}
-                  onClose={(e) => handleDeselect(value, e)}
-                  removeIcon={removeIcon}
-                  size={size}
-                  maxTagTextLength={maxTagTextLength}
-                />
-              ),
+          {/* Tag/value area wraps internally; the suffix stays a sibling so the
+              outer items-center keeps the icons vertically centred no matter how
+              many rows the tags occupy. */}
+          <div
+            ref={tagsAreaRef}
+            data-gjs-select-content=""
+            className={cn(
+              "flex min-w-0 flex-1 flex-wrap items-center gap-1",
+              // Responsive overflow stays on one row (clipping the rest) so the
+              // pre-hydration HTML doesn't stack tags into rows and then snap.
+              maxTagCount === "responsive" && "flex-nowrap overflow-hidden",
             )}
-
-          {overflowTags.length > 0 && (
-            <span
-              data-gjs-select-overflow-tag=""
-              className="gjs-select-overflow-tag inline-flex shrink-0 items-center rounded border border-border bg-muted px-1.5 text-xs text-muted-foreground"
-            >
-              {maxTagPlaceholder
-                ? typeof maxTagPlaceholder === "function"
-                  ? maxTagPlaceholder(
-                      overflowTags.map(({ value, label }) => ({ label, value }) as SelectOption<V>),
-                    )
-                  : maxTagPlaceholder
-                : `+${overflowTags.length}`}
-            </span>
-          )}
-
-          {/* Selection area: the value/placeholder plus the inline search input.
-              Typing happens inside the selector, not the popup. */}
-          <span
-            data-gjs-select-selection=""
-            className="gjs-select-selection relative flex min-w-0 flex-1 items-center"
           >
-            {/* Single value / placeholder — shown unless a query is being typed
-                into the open popup; while closed it always wins over a kept query. */}
-            {!isMultiple && (!searchValue || !open) && (
+            {isMultiple &&
+              visibleTags.map(({ value, label, disabled: td }) =>
+                tagRender ? (
+                  tagRender({
+                    label,
+                    value,
+                    disabled: td || disabled,
+                    closable: !disabled,
+                    onClose: (e) => handleDeselect(value, e),
+                  })
+                ) : (
+                  <SelectTag
+                    key={String(value)}
+                    label={label}
+                    disabled={td || disabled}
+                    onClose={(e) => handleDeselect(value, e)}
+                    removeIcon={removeIcon}
+                    size={size}
+                    maxTagTextLength={maxTagTextLength}
+                  />
+                ),
+              )}
+
+            {overflowTags.length > 0 && (
               <span
-                data-gjs-select-value=""
+                data-gjs-select-overflow-tag=""
                 className={cn(
-                  "gjs-select-value min-w-0 flex-1 truncate",
-                  !hasValue && "text-muted-foreground",
+                  "gjs-select-overflow-tag inline-flex shrink-0 items-center rounded border border-border bg-muted px-1.5 text-muted-foreground",
+                  // Match the tag height per size (same leading/text size) so the
+                  // "+N" pill lines up with the real tags rather than sitting short.
+                  size === "small" ? "text-xs leading-4" : "leading-5",
+                  size === "large" && "text-sm leading-6",
                 )}
               >
-                {hasValue ? singleLabel : placeholder}
+                {maxTagPlaceholder
+                  ? typeof maxTagPlaceholder === "function"
+                    ? maxTagPlaceholder(
+                        overflowTags.map(({ value, label }) => ({ label, value }) as SelectOption<V>),
+                      )
+                    : maxTagPlaceholder
+                  : `+${overflowTags.length}`}
               </span>
             )}
 
-            {/* Multiple placeholder — only when nothing is selected or typed */}
-            {isMultiple && selectedValues.length === 0 && !searchValue && (
-              <span
-                data-gjs-select-placeholder=""
-                className="gjs-select-placeholder pointer-events-none absolute inset-y-0 start-0 flex items-center text-muted-foreground"
-              >
-                {placeholder}
-              </span>
-            )}
-
-            <input
-              ref={searchInputRef}
-              data-gjs-select-search=""
-              tabIndex={-1}
-              readOnly={!showSearch}
-              aria-label="Search"
-              value={searchValue}
-              onChange={(e) => handleSearch(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                // stopPropagation avoids a double toggle with the trigger onClick.
-                // A search input is for editing, so a click keeps the popup open;
-                // a plain (readonly) input acts like the selector and toggles.
-                e.stopPropagation()
-                if (disabled) return
-                setOpen(showSearch ? true : !open)
-              }}
-              className={cn(
-                "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
-                isMultiple
-                  ? "min-w-10 flex-1"
-                  : !open
-                    // Closed: the value/placeholder carries the selection, so the
-                    // input hides its (possibly kept) text but still covers the
-                    // control to catch the click that opens it.
-                    ? "absolute inset-0 size-full cursor-default opacity-0"
-                    : searchValue
-                      ? "min-w-0 flex-1"
-                      // Open + searchable: keep the input visible (transparent) so
-                      // its text caret shows over the value/placeholder.
-                      : showSearch
-                        ? "absolute inset-0 size-full"
-                        : "absolute inset-0 size-full cursor-default opacity-0",
+            {/* Selection area: the value/placeholder plus the inline search input.
+                Typing happens inside the selector, not the popup. */}
+            <span
+              data-gjs-select-selection=""
+              className="gjs-select-selection relative flex min-w-0 flex-1 items-center"
+            >
+              {/* Single value / placeholder — shown unless a query is being typed
+                  into the open popup; while closed it always wins over a kept query. */}
+              {!isMultiple && (!searchValue || !open) && (
+                <span
+                  data-gjs-select-value=""
+                  className={cn(
+                    "gjs-select-value min-w-0 flex-1 truncate",
+                    !hasValue && "text-muted-foreground",
+                  )}
+                >
+                  {hasValue ? singleLabel : placeholder}
+                </span>
               )}
-            />
-          </span>
+
+              {/* Multiple placeholder — only when nothing is selected or typed */}
+              {isMultiple && selectedValues.length === 0 && !searchValue && (
+                <span
+                  data-gjs-select-placeholder=""
+                  className="gjs-select-placeholder pointer-events-none absolute inset-y-0 start-0 flex items-center text-muted-foreground"
+                >
+                  {placeholder}
+                </span>
+              )}
+
+              <input
+                ref={searchInputRef}
+                data-gjs-select-search=""
+                tabIndex={-1}
+                readOnly={!showSearch}
+                aria-label="Search"
+                value={searchValue}
+                onChange={(e) => handleSearch(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  // stopPropagation avoids a double toggle with the trigger onClick.
+                  // A search input is for editing, so a click keeps the popup open;
+                  // a plain (readonly) input acts like the selector and toggles.
+                  e.stopPropagation()
+                  if (disabled) return
+                  setOpen(showSearch ? true : !open)
+                }}
+                className={cn(
+                  "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+                  isMultiple
+                    ? "min-w-10 flex-1"
+                    : !open
+                      // Closed: the value/placeholder carries the selection, so the
+                      // input hides its (possibly kept) text but still covers the
+                      // control to catch the click that opens it.
+                      ? "absolute inset-0 size-full cursor-default opacity-0"
+                      : searchValue
+                        ? "min-w-0 flex-1"
+                        // Open + searchable: keep the input visible (transparent) so
+                        // its text caret shows over the value/placeholder.
+                        : showSearch
+                          ? "absolute inset-0 size-full"
+                          : "absolute inset-0 size-full cursor-default opacity-0",
+                )}
+              />
+            </span>
+          </div>
 
           <span
             data-gjs-select-suffix=""
-            className="gjs-select-suffix ms-auto flex shrink-0 items-center ps-1"
+            className="gjs-select-suffix flex shrink-0 items-center"
           >
             {loading ? (
               <Loader2
@@ -1347,7 +1370,7 @@ function SelectInner<V extends SelectValue = string>(
             searchInputRef.current?.focus()
           }}
           onPointerDownOutside={(e) => {
-            if (tagsAreaRef.current?.contains(e.target as Node)) {
+            if (triggerRef.current?.contains(e.target as Node)) {
               e.preventDefault()
             }
           }}
@@ -1355,7 +1378,7 @@ function SelectInner<V extends SelectValue = string>(
             // The search input lives in the selector (the anchor), which Radix
             // treats as outside the popup content. Moving focus into it must not
             // dismiss the popup (otherwise keyboard-open closes immediately).
-            if (tagsAreaRef.current?.contains(e.target as Node)) {
+            if (triggerRef.current?.contains(e.target as Node)) {
               e.preventDefault()
             }
           }}
