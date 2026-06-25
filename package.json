@@ -5,7 +5,7 @@
   "description": "A feature-complete, accessible Select for React and shadcn/ui — single, multiple, and tags modes, built-in search, virtualized lists, and antd-grade behavior. Install by copy-paste with the shadcn CLI.",
   "license": "MIT",
   "author": "gokhanjs",
-  "homepage": "https://gjs-select.vercel.app",
+  "homepage": "https://gjs-select.gokhanyildiz.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gokhanjs/gjs-select.git"
