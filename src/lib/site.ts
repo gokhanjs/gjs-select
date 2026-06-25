@@ -6,7 +6,7 @@ export const site = {
   tagline: "The Select shadcn/ui is missing",
   description:
     "A feature-complete, accessible Select for React and shadcn/ui — single, multiple, and tags modes, built-in search, virtualized lists, and antd-grade behavior. Install by copy-paste with the shadcn CLI.",
-  url: "https://gjs-select.vercel.app",
+  url: "https://gjs-select.gokhanyildiz.dev",
   github: "https://github.com/gokhanjs/gjs-select",
   author: "gokhanjs",
   keywords: [
