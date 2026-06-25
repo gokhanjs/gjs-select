@@ -204,7 +204,7 @@ const triggerVariants = cva(
       },
       size: {
         small: "min-h-6 px-2 py-0.5 text-xs",
-        middle: "min-h-8 px-3 py-1",
+        middle: "min-h-8 px-2 py-1",
         large: "min-h-10 px-3 py-2 text-base",
       },
       status: {
@@ -388,10 +388,21 @@ function OptionListInner<V extends SelectValue>(
     [virtual, rowIndexOf, virtualizer],
   )
 
-  // Reset active option whenever the visible set changes (e.g. after a search).
+  // Reset the active option only when the visible option SET changes (e.g. after
+  // a search filters the list). The key is the option identities, NOT the
+  // `firstEnabled`/`isOptDisabled` callbacks — those also change identity when
+  // `selectedValues` changes, so gating on them would snap the highlight back to
+  // the first row on every pick in multiple mode (the popup stays open there).
+  const optionKey = React.useMemo(
+    () => optionRows.map((r) => String(r.option.value)).join(" "),
+    [optionRows],
+  )
+  const prevOptionKey = React.useRef<string | null>(null)
   React.useEffect(() => {
+    if (prevOptionKey.current === optionKey) return
+    prevOptionKey.current = optionKey
     setActiveIdx(defaultActiveFirstOption ? firstEnabled() : null)
-  }, [defaultActiveFirstOption, firstEnabled])
+  }, [optionKey, defaultActiveFirstOption, firstEnabled])
 
   // Publish the active option id up to the combobox (aria-activedescendant).
   React.useEffect(() => {
@@ -667,11 +678,21 @@ function SelectInner<V extends SelectValue = string>(
     (next: boolean) => {
       if (openProp === undefined) setInternalOpen(next)
       onDropdownVisibleChange?.(next)
-      if (!next && autoClearSearchValue && searchValueProp === undefined) {
+      // Reset the query on open (and on close only for multiple). Single mode
+      // deliberately keeps its query when closing: clearing it there would
+      // re-expand the closing dropdown from the filtered list back to the full
+      // list — a visible flicker. It clears on the next open instead. Multiple
+      // has no close-on-select, so it clears on close to avoid leaving stale
+      // text in its always-visible inline input.
+      if (
+        autoClearSearchValue &&
+        searchValueProp === undefined &&
+        (next || isMultiple)
+      ) {
         setInternalSearch("")
       }
     },
-    [openProp, onDropdownVisibleChange, autoClearSearchValue, searchValueProp],
+    [openProp, onDropdownVisibleChange, autoClearSearchValue, searchValueProp, isMultiple],
   )
 
   // ── Search state ────────────────────────────────────────────────────────────
@@ -693,6 +714,10 @@ function SelectInner<V extends SelectValue = string>(
   const triggerRef = React.useRef<HTMLDivElement>(null)
   const optionListRef = React.useRef<OptionListHandle>(null)
   const tagsAreaRef = React.useRef<HTMLDivElement>(null)
+  // Per-tag widths cached by position, refreshed whenever every tag is visible.
+  // Lets the responsive measure account for collapsed (unrendered) tags so the
+  // control can expand again when it grows wider, not just collapse.
+  const tagWidthsRef = React.useRef<number[]>([])
   const [responsiveMax, setResponsiveMax] = React.useState<number>(9999)
 
   // ── A11y IDs ────────────────────────────────────────────────────────────────
@@ -791,13 +816,25 @@ function SelectInner<V extends SelectValue = string>(
     if (maxTagCount !== "responsive") return
     const area = tagsAreaRef.current
     if (!area) return
+    const total = selectedValues.length
     const measure = () => {
       const avail = area.clientWidth - 52
+      const tagEls = Array.from(area.querySelectorAll<HTMLElement>("[data-gjs-select-tag]"))
+      // Refresh the width cache only when every tag is on screen; while collapsed
+      // we reuse the cached widths so hidden tags still count toward the fit.
+      if (tagEls.length === total) tagWidthsRef.current = tagEls.map((el) => el.offsetWidth)
+      const widths = tagWidthsRef.current
       let used = 0
       let count = 0
-      const tagEls = area.querySelectorAll<HTMLElement>("[data-gjs-select-tag]")
-      for (const el of tagEls) {
-        used += el.offsetWidth + 4
+      for (let i = 0; i < total; i++) {
+        const w = widths[i]
+        // An unmeasured tag (e.g. just added while collapsed): show all so the
+        // next pass can measure them, then it re-settles.
+        if (w === undefined) {
+          count = total
+          break
+        }
+        used += w + 4
         if (used <= avail) count++
         else break
       }
@@ -807,7 +844,7 @@ function SelectInner<V extends SelectValue = string>(
     ro.observe(area)
     measure()
     return () => ro.disconnect()
-  }, [maxTagCount, selectedValues.length])
+  }, [maxTagCount, selectedValues])
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const commitChange = React.useCallback(
@@ -1114,9 +1151,6 @@ function SelectInner<V extends SelectValue = string>(
           style={style}
           className={cn(
             triggerVariants({ variant, size, status: status ?? "none" }),
-            // The multiple control hugs its tags (≈4px) vs the single control's
-            // roomier inset.
-            isMultiple && "px-1",
             disabled && "cursor-not-allowed opacity-50 pointer-events-none",
             className,
           )}
@@ -1193,8 +1227,9 @@ function SelectInner<V extends SelectValue = string>(
             data-gjs-select-selection=""
             className="gjs-select-selection relative flex min-w-0 flex-1 items-center"
           >
-            {/* Single value / placeholder — hidden while a query is being typed */}
-            {!isMultiple && !searchValue && (
+            {/* Single value / placeholder — shown unless a query is being typed
+                into the open popup; while closed it always wins over a kept query. */}
+            {!isMultiple && (!searchValue || !open) && (
               <span
                 data-gjs-select-value=""
                 className={cn(
@@ -1238,14 +1273,18 @@ function SelectInner<V extends SelectValue = string>(
                 "gjs-select-search bg-transparent text-sm outline-none placeholder:text-muted-foreground",
                 isMultiple
                   ? "min-w-10 flex-1"
-                  : searchValue
-                    ? "min-w-0 flex-1"
-                    : showSearch && open
+                  : !open
+                    // Closed: the value/placeholder carries the selection, so the
+                    // input hides its (possibly kept) text but still covers the
+                    // control to catch the click that opens it.
+                    ? "absolute inset-0 size-full cursor-default opacity-0"
+                    : searchValue
+                      ? "min-w-0 flex-1"
                       // Open + searchable: keep the input visible (transparent) so
-                      // its text caret shows over the value/placeholder — signals
-                      // the field is typable.
-                      ? "absolute inset-0 size-full"
-                      : "absolute inset-0 size-full cursor-default opacity-0",
+                      // its text caret shows over the value/placeholder.
+                      : showSearch
+                        ? "absolute inset-0 size-full"
+                        : "absolute inset-0 size-full cursor-default opacity-0",
               )}
             />
           </span>

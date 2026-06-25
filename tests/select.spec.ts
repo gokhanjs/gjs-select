@@ -658,3 +658,63 @@ test("RHF: valid form submits successfully", async ({ page }) => {
   await expect(page.locator("[data-testid=rhf-success]")).toBeVisible()
   await expect(page.locator("[data-gjs-select-form-error]")).toHaveCount(0)
 })
+
+// ─── Regression: live-use interaction bugs ────────────────────────────────────
+
+test("multiple: clicking a non-first option keeps the highlight on it", async ({ page }) => {
+  // The active-option reset used to fire on every selection (selectedValues fed
+  // the reset effect's deps), snapping the highlight back to the first row
+  // instead of leaving it on the option just clicked.
+  const t = page.locator('[data-gjs-select-trigger][aria-label="Multiple fruit selection"]')
+  await t.click()
+  await expect(dropdown(page)).toBeVisible()
+  await option(page, "Elderberry").click()
+  // Multiple keeps the popup open; the clicked option must stay the active one.
+  await expect(option(page, "Elderberry")).toHaveAttribute("data-active", "true")
+  await expect(option(page, "Apple")).not.toHaveAttribute("data-active", "true")
+})
+
+test("single + search: selecting does not re-expand the list mid-close", async ({ page }) => {
+  // Selecting after a search cleared the query in the same render that closed the
+  // popup, so the list re-expanded from the filtered view back to the full list
+  // during the close animation — a visible flicker.
+  const t = page.locator('[data-gjs-select-trigger][aria-label="Fruit search"]')
+  await t.click()
+  await expect(dropdown(page)).toBeVisible()
+  await searchInput(page).fill("app")
+  await expect(page.locator("[data-gjs-select-option]")).toHaveCount(1)
+
+  await page.evaluate(() => {
+    const w = window as unknown as { __counts: number[]; __obs?: MutationObserver }
+    w.__counts = [document.querySelectorAll("[data-gjs-select-option]").length]
+    w.__obs = new MutationObserver(() =>
+      w.__counts.push(document.querySelectorAll("[data-gjs-select-option]").length),
+    )
+    w.__obs.observe(document.body, { childList: true, subtree: true })
+  })
+  await option(page, "Apple").click()
+  await page.waitForTimeout(250)
+  const counts = await page.evaluate(() => {
+    const w = window as unknown as { __counts: number[]; __obs?: MutationObserver }
+    w.__obs?.disconnect()
+    return w.__counts
+  })
+  // Filtered to a single match — the list must never re-expand mid-close.
+  expect(Math.max(...counts)).toBe(1)
+  await expect(t.locator("[data-gjs-select-value]")).toHaveText("Apple")
+})
+
+test("trigger horizontal padding is consistent across single / multiple / tags", async ({ page }) => {
+  // multiple/tags used to force px-1 while single kept the size padding, so the
+  // placeholder and chevron did not line up across modes.
+  const padOf = (label: string) =>
+    page
+      .locator(`[data-gjs-select-trigger][aria-label="${label}"]`)
+      .evaluate((el) => {
+        const cs = getComputedStyle(el)
+        return `${cs.paddingLeft}/${cs.paddingRight}`
+      })
+  const single = await padOf("Fruit selection")
+  expect(await padOf("Multiple fruit selection")).toBe(single)
+  expect(await padOf("Tag creation")).toBe(single)
+})
