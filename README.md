@@ -5,7 +5,7 @@ React and shadcn/ui — single, multiple, and tags modes, built-in search,
 virtualized lists, and antd-grade behavior. Installed by copy-paste with the
 shadcn CLI, so the source lives in your repo and you own every line.
 
-🔗 **[Live docs & playground →](https://gjs-select.vercel.app)**
+🔗 **[Live docs & playground →](https://gjs-select.gokhanyildiz.dev)**
 
 ![gjs-select in action — single, multiple, and tags modes](example.gif)
 
@@ -22,7 +22,7 @@ shadcn CLI, so the source lives in your repo and you own every line.
 ## Installation
 
 ```bash
-npx shadcn@latest add https://gjs-select.vercel.app/r/gjs-select.json
+npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json
 ```
 
 This drops `select.tsx` into `components/ui/` and installs its dependencies
@@ -90,7 +90,7 @@ The component mirrors the antd `Select` API. The most common props:
 Custom rendering (`optionRender`, `tagRender`, `labelRender`, `dropdownRender`),
 `fieldNames`, `labelInValue`, `placement`, `popupMatchSelectWidth`, an imperative
 ref (`focus`/`blur`/`scrollTo`), and the full event surface are also supported —
-see the **[live docs](https://gjs-select.vercel.app)** for the complete reference.
+see the **[live docs](https://gjs-select.gokhanyildiz.dev)** for the complete reference.
 
 ## Styling
 
