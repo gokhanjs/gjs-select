@@ -57,10 +57,13 @@ export function Hero() {
             </p>
             <Select
               options={FRAMEWORKS}
+              mode="multiple"
+              defaultValue={["next", "remix"]}
+              maxTagCount="responsive"
               showSearch
               allowClear
-              placeholder="Search a framework…"
-              aria-label="Framework picker demo"
+              placeholder="Search frameworks…"
+              aria-label="Framework multi-select demo"
             />
           </div>
           <CodeBlock code={site.installCmd} language="bash" filename="terminal" />

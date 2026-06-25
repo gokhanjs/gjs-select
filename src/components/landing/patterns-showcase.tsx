@@ -4,13 +4,16 @@ import type { ReactNode } from "react"
 
 import { SectionHeading } from "@/components/landing/section-heading"
 import { CodePreview } from "@/components/landing/code-preview"
-import { RenderModes } from "@/components/landing/examples/render-modes"
 import { AsyncSearch } from "@/components/landing/examples/async-search"
 import { ResponsiveTags } from "@/components/landing/examples/responsive-tags"
 import { VirtualList } from "@/components/landing/examples/virtual-list"
 import { CustomRender } from "@/components/landing/examples/custom-render"
 import { VariantSwitcher } from "@/components/landing/examples/variant-switcher"
 import { LabelInValue } from "@/components/landing/examples/label-in-value"
+import { PrefixSuffix } from "@/components/landing/examples/prefix-suffix"
+import { StatusStates } from "@/components/landing/examples/status-states"
+import { DropdownRender } from "@/components/landing/examples/dropdown-render"
+import { RtlDirection } from "@/components/landing/examples/rtl-direction"
 import { SelectFormDemo } from "@/components/landing/examples/select-form-demo"
 
 const EXAMPLES_DIR = path.join(process.cwd(), "src/components/landing/examples")
@@ -43,13 +46,16 @@ function PatternBlock({
 
 export function PatternsShowcase() {
   const source = {
-    renderModes: readExample("render-modes.tsx"),
     asyncSearch: readExample("async-search.tsx"),
     responsiveTags: readExample("responsive-tags.tsx"),
     virtualList: readExample("virtual-list.tsx"),
     customRender: readExample("custom-render.tsx"),
     variantSwitcher: readExample("variant-switcher.tsx"),
     labelInValue: readExample("label-in-value.tsx"),
+    prefixSuffix: readExample("prefix-suffix.tsx"),
+    statusStates: readExample("status-states.tsx"),
+    dropdownRender: readExample("dropdown-render.tsx"),
+    rtlDirection: readExample("rtl-direction.tsx"),
     selectFormDemo: readExample("select-form-demo.tsx"),
   }
 
@@ -59,19 +65,10 @@ export function PatternsShowcase() {
         <SectionHeading
           eyebrow="Patterns"
           title="Real-world patterns"
-          description="Server and client rendering, 10k-row virtualization, custom rendering, variants, and a Zod-validated form — the cases you actually ship."
+          description="Async search, 10k-row virtualization, custom rendering, variants, validation states, RTL, and a Zod-validated form — the cases you actually ship."
         />
 
         <div className="mt-10 space-y-5">
-          <PatternBlock
-            title="Drop into Server Components"
-            description="Select is a client island — render it straight inside a Server Component page (the App Router pattern), shown beside a Client Component for comparison."
-          >
-            <CodePreview code={source.renderModes} filename="render-modes.tsx">
-              <RenderModes />
-            </CodePreview>
-          </PatternBlock>
-
           <div className="grid gap-5 lg:grid-cols-2">
             <PatternBlock
               title="Debounced async search"
@@ -124,6 +121,42 @@ export function PatternsShowcase() {
             >
               <CodePreview code={source.labelInValue} filename="label-in-value.tsx">
                 <LabelInValue />
+              </CodePreview>
+            </PatternBlock>
+
+            <PatternBlock
+              title="Prefix & custom suffix"
+              description="prefix renders a node before the value; suffixIcon swaps the trigger affordance."
+            >
+              <CodePreview code={source.prefixSuffix} filename="prefix-suffix.tsx">
+                <PrefixSuffix />
+              </CodePreview>
+            </PatternBlock>
+
+            <PatternBlock
+              title="Validation states"
+              description='status="error | warning" tints the trigger to match form-validation feedback.'
+            >
+              <CodePreview code={source.statusStates} filename="status-states.tsx">
+                <StatusStates />
+              </CodePreview>
+            </PatternBlock>
+
+            <PatternBlock
+              title="Custom dropdown footer"
+              description="dropdownRender wraps the menu — append a sticky footer, an action, or any custom content."
+            >
+              <CodePreview code={source.dropdownRender} filename="dropdown-render.tsx">
+                <DropdownRender />
+              </CodePreview>
+            </PatternBlock>
+
+            <PatternBlock
+              title="Right-to-left"
+              description='direction="rtl" mirrors the full layout for Arabic, Hebrew, and Persian.'
+            >
+              <CodePreview code={source.rtlDirection} filename="rtl-direction.tsx">
+                <RtlDirection />
               </CodePreview>
             </PatternBlock>
           </div>

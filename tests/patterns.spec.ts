@@ -24,17 +24,6 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/")
 })
 
-// ─── Server & client render modes ─────────────────────────────────────────────
-
-test("render modes: both cards render with runtime markers proving where they ran", async ({ page }) => {
-  await expect(page.locator('[data-example-badge="server"]')).toHaveText("Server Component")
-  await expect(page.locator('[data-example-badge="client"]')).toHaveText("Client Component")
-  // process.version only exists server-side — its marker proves a server render.
-  await expect(page.getByText(/Rendered on the server/)).toBeVisible()
-  // The hydration flag flips only in the browser — proves the client render.
-  await expect(page.getByText("Hydrated in your browser")).toBeVisible()
-})
-
 // ─── Debounced async search ────────────────────────────────────────────────────
 
 test("async search: a debounced query hits the API route and shows server-filtered results", async ({ page }) => {
