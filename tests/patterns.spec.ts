@@ -66,3 +66,22 @@ test("responsive tags: overflow collapses in a narrow box and expands when widen
   await expect(t.locator("[data-gjs-select-overflow-tag]")).toHaveCount(0)
   await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(3)
 })
+
+// ─── Custom dropdown footer (dropdownRender) ───────────────────────────────────
+
+test("dropdown footer: dropdownRender appends custom content below the menu", async ({ page }) => {
+  const t = triggerByLabel(page, "Select with a custom dropdown footer")
+  await t.scrollIntoViewIfNeeded()
+
+  // The footer lives inside dropdownRender, so it only exists while the dropdown
+  // is open — a synthetic (untrusted) event won't open the Radix popover, which
+  // is why this needs a real browser click rather than a unit test.
+  const footer = dropdown(page).getByRole("button", { name: "Create new label" })
+  await expect(footer).toHaveCount(0)
+
+  await t.click()
+  await expect(dropdown(page)).toBeVisible()
+
+  // dropdownRender wraps the option menu and renders the custom footer beneath it.
+  await expect(footer).toBeVisible()
+})
