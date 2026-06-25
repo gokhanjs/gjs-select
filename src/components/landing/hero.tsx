@@ -21,7 +21,7 @@ export function Hero() {
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
             <Sparkles className="size-3.5" />
-            v1.0 · antd-grade Select for shadcn/ui
+            v1.0 · Production-grade Select for shadcn/ui
           </span>
 
           <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-6xl">
@@ -30,7 +30,7 @@ export function Hero() {
 
           <p className="mt-5 text-pretty text-lg leading-relaxed text-muted-foreground">
             Single, multiple, and tags modes. Built-in search, virtualized lists,
-            and full keyboard &amp; screen-reader support — antd-grade behavior in
+            and full keyboard &amp; screen-reader support — production-grade behavior in
             one copy-paste component.
           </p>
 
