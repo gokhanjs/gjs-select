@@ -4,21 +4,13 @@ import { expect, test } from "@playwright/test"
 // WCAG 2.1 Level A + AA rules
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
 
-// Known false-positive rules to disable (add only with documented justification)
-const DISABLED_RULES: string[] = [
-  // cmdk renders a hidden input inside the combobox that duplicates role — false positive in some axe versions
-  "aria-required-children",
-]
-
 test.describe("Accessibility — WCAG 2.1 AA (closed state)", () => {
   test("home page has no violations (all closed selects)", async ({ page }) => {
     await page.goto("/demo")
     await page.waitForLoadState("networkidle")
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .analyze()
+      .withTags(WCAG_TAGS)      .analyze()
 
     if (results.violations.length > 0) {
       const summary = results.violations
@@ -35,12 +27,10 @@ test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
     await page.goto("/demo")
     // Open first select
     await page.locator('[role="combobox"]').first().click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .analyze()
+      .withTags(WCAG_TAGS)      .analyze()
 
     expect(results.violations).toHaveLength(0)
   })
@@ -54,12 +44,10 @@ test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
     } else {
       await page.locator('[role="combobox"]').nth(1).click()
     }
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .analyze()
+      .withTags(WCAG_TAGS)      .analyze()
 
     expect(results.violations).toHaveLength(0)
   })
@@ -68,12 +56,10 @@ test.describe("Accessibility — WCAG 2.1 AA (open state)", () => {
     await page.goto("/test?n=500")
     await page.waitForSelector('[data-testid="option-count"]')
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .analyze()
+      .withTags(WCAG_TAGS)      .analyze()
 
     expect(results.violations).toHaveLength(0)
   })
@@ -84,9 +70,7 @@ test.describe("Accessibility — error state", () => {
     await page.goto("/demo")
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .include('[data-status="error"]')
+      .withTags(WCAG_TAGS)      .include('[data-status="error"]')
       .analyze()
 
     expect(results.violations).toHaveLength(0)
@@ -102,9 +86,7 @@ test.describe("Accessibility — error state", () => {
     }
 
     const results = await new AxeBuilder({ page })
-      .withTags(WCAG_TAGS)
-      .disableRules(DISABLED_RULES)
-      .include('[data-testid="rhf-form"]')
+      .withTags(WCAG_TAGS)      .include('[data-testid="rhf-form"]')
       .analyze()
 
     expect(results.violations).toHaveLength(0)
@@ -126,7 +108,7 @@ test.describe("Accessibility — keyboard operability (WCAG 2.1.1)", () => {
 
     // Open with Space (confirmed by functional tests)
     await page.keyboard.press("Space")
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeVisible({ timeout: 1000 })
+    await expect(page.locator('[role="listbox"]').first()).toBeVisible({ timeout: 1000 })
     // Allow the setTimeout(0) focus-transfer to the search input to complete
     await page.waitForTimeout(50)
 
@@ -138,7 +120,7 @@ test.describe("Accessibility — keyboard operability (WCAG 2.1.1)", () => {
     await page.keyboard.press("Enter")
 
     // Dropdown must close after selection
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeHidden({ timeout: 1000 })
+    await expect(page.locator('[role="listbox"]').first()).toBeHidden({ timeout: 1000 })
   })
 })
 

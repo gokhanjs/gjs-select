@@ -71,12 +71,12 @@ test.describe("Visual regression — selected state", () => {
 
     const trigger = page.locator('[role="combobox"]').first()
     await trigger.click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     await page
       .locator('[data-gjs-select-option]:not([data-disabled])')
       .first()
       .click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]', { state: "hidden" })
+    await page.waitForSelector('[role="listbox"]', { state: "hidden" })
     await page.waitForTimeout(100)
 
     await expect(trigger).toHaveScreenshot("select-with-value.png", { maxDiffPixelRatio: DIFF_RATIO })
@@ -94,7 +94,7 @@ test.describe("Visual regression — selected state", () => {
     }
 
     await multi.click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     const items = page.locator('[data-gjs-select-option]:not([data-disabled])')
     await items.nth(0).click()
     await items.nth(1).click()
@@ -112,7 +112,7 @@ test.describe("Visual regression — open/dropdown state", () => {
     await page.waitForTimeout(200)
 
     await page.locator('[role="combobox"]').first().click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     await page.waitForTimeout(100) // animation settle
 
     await expect(page).toHaveScreenshot("select-dropdown-open.png", {
@@ -128,11 +128,11 @@ test.describe("Visual regression — open/dropdown state", () => {
     await page.waitForTimeout(200)
 
     await page.locator('[role="combobox"]').first().click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     await page.keyboard.press("ArrowDown")
     await page.waitForTimeout(50)
 
-    const list = page.locator('[role="listbox"], [cmdk-list]').first()
+    const list = page.locator('[role="listbox"]').first()
     await expect(list).toHaveScreenshot("select-dropdown-highlighted.png", { maxDiffPixelRatio: DIFF_RATIO })
   })
 
@@ -149,10 +149,10 @@ test.describe("Visual regression — open/dropdown state", () => {
       // Try second or third select that might be grouped
       await page.locator('[role="combobox"]').nth(2).click()
     }
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     await page.waitForTimeout(100)
 
-    const list = page.locator('[role="listbox"], [cmdk-list]').first()
+    const list = page.locator('[role="listbox"]').first()
     await expect(list).toHaveScreenshot("select-dropdown-groups.png", { maxDiffPixelRatio: DIFF_RATIO })
   })
 })

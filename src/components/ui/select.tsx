@@ -36,7 +36,7 @@ export interface TagRenderProps<V extends SelectValue = string> {
   onClose: (e: React.MouseEvent) => void
 }
 
-/** Imperative handle exposed via ref — mirrors antd's BaseSelectRef. */
+/** Imperative handle exposed via ref (focus/blur/scrollTo + the DOM node). */
 export interface SelectRef {
   focus: (options?: FocusOptions) => void
   blur: () => void
@@ -159,9 +159,9 @@ function nodeToString(node: React.ReactNode): string {
   return ""
 }
 
-/** antd parity: split `text` on any of `tokens`, dropping empty segments.
- *  Returns null when no separator actually matched, so callers fall through to a
- *  normal search update. Mirrors rc-select's getSeparatedContent. */
+/** Split `text` on any of `tokens`, dropping empty segments. Returns null when
+ *  no separator actually matched, so callers fall through to a normal search
+ *  update. */
 function splitByTokens(text: string, tokens: string[]): string[] | null {
   if (!tokens.length) return null
   let matched = false
@@ -234,8 +234,8 @@ function SelectTag({
   size?: "small" | "middle" | "large"
   maxTagTextLength?: number
 }) {
-  // antd parity: truncate string/number labels longer than maxTagTextLength,
-  // appending an ellipsis. Non-text (ReactNode) labels are left untouched.
+  // Truncate string/number labels longer than maxTagTextLength, appending an
+  // ellipsis. Non-text (ReactNode) labels are left untouched.
   const display =
     maxTagTextLength &&
     (typeof label === "string" || typeof label === "number") &&
@@ -281,8 +281,7 @@ function SelectTag({
 // when `virtual`, otherwise materialises every row — but the keyboard, active
 // state, and a11y wiring are identical for both, so there is no second code
 // path to drift. Exposes a keyboard handler + scroll control via ref so the
-// search input (and the list itself) can drive navigation, the way antd wires
-// its input to the option list.
+// search input (and the list itself) can drive navigation.
 
 export interface OptionListHandle {
   keyDown: (e: React.KeyboardEvent) => void
@@ -353,8 +352,8 @@ function OptionListInner<V extends SelectValue>(
     [rows, optionRows],
   )
 
-  // antd parity: once maxCount is reached, unselected options become disabled
-  // (still selectable to deselect). Keyboard nav and render share this check.
+  // Once maxCount is reached, unselected options become disabled (still
+  // selectable to deselect). Keyboard nav and render share this check.
   const isOptDisabled = React.useCallback(
     (opt: SelectOption<V>) => !!opt.disabled || (maxReached && !selectedValues.includes(opt.value)),
     [maxReached, selectedValues],
@@ -485,8 +484,8 @@ function OptionListInner<V extends SelectValue>(
         ) : (
           <>
             <span className="flex-1 truncate">{option.label}</span>
-            {/* antd parity: a selected option (single OR multiple) shows a
-                borderless check on the trailing edge — no left checkbox box. */}
+            {/* A selected option (single OR multiple) shows a borderless check
+                on the trailing edge — no left checkbox box. */}
             {isSelected && (
               <span
                 data-gjs-select-option-check=""
@@ -702,7 +701,7 @@ function SelectInner<V extends SelectValue = string>(
   const optId = React.useCallback((v: V): string => `${baseId}opt${String(v)}`, [baseId])
   const [activeDescendant, setActiveDescendant] = React.useState<string | undefined>()
 
-  // ── Imperative handle (antd BaseSelectRef parity) ─────────────────────────────
+  // ── Imperative handle ────────────────────────────────────────────────────────
   React.useImperativeHandle(ref, () => ({
     focus: (options) => triggerRef.current?.focus(options),
     blur: () => triggerRef.current?.blur(),
@@ -710,13 +709,13 @@ function SelectInner<V extends SelectValue = string>(
     nativeElement: triggerRef.current,
   }), [])
 
-  // antd parity: focus the control on mount when autoFocus is set.
+  // Focus the control on mount when autoFocus is set.
   React.useEffect(() => {
     if (autoFocus) triggerRef.current?.focus()
   }, [autoFocus])
 
-  // antd parity: getPopupContainer chooses where the dropdown portals. Resolved
-  // after mount since it receives the (now-rendered) trigger node.
+  // getPopupContainer chooses where the dropdown portals. Resolved after mount
+  // since it receives the (now-rendered) trigger node.
   const [popupContainer, setPopupContainer] = React.useState<HTMLElement | null>(null)
   React.useEffect(() => {
     if (getPopupContainer && triggerRef.current) {
@@ -724,8 +723,7 @@ function SelectInner<V extends SelectValue = string>(
     }
   }, [getPopupContainer])
 
-  // antd parity: the clear icon replaces the arrow only while the control is
-  // hovered (mirrors antd's `:hover .ant-select-clear`).
+  // The clear icon replaces the arrow only while the control is hovered.
   const [hovered, setHovered] = React.useState(false)
 
   // ── Options ─────────────────────────────────────────────────────────────────
@@ -773,8 +771,8 @@ function SelectInner<V extends SelectValue = string>(
     }
     const base = filtered()
     if (!filterSort) return base
-    // antd parity: filterSort orders options after filtering — within each group
-    // for grouped data, otherwise across the flat option list.
+    // filterSort orders options after filtering — within each group for grouped
+    // data, otherwise across the flat option list.
     const sortOpts = (opts: SelectOption<V>[]) =>
       [...opts].sort((a, b) => filterSort(a, b, { searchValue }))
     return base.some(isOptGroup)
@@ -840,7 +838,7 @@ function SelectInner<V extends SelectValue = string>(
           next = selectedValues.filter((v) => v !== option.value)
           onDeselectProp?.(option.value, option)
         } else {
-          // antd parity: block new selections once maxCount is reached.
+          // Block new selections once maxCount is reached.
           if (maxCount !== undefined && selectedValues.length >= maxCount) return
           next = [...selectedValues, option.value]
           onSelectProp?.(option.value, option)
@@ -907,7 +905,7 @@ function SelectInner<V extends SelectValue = string>(
               .map((w) => allFlat.find((o) => nodeToString(o.label).toLowerCase() === w.toLowerCase())?.value)
               .filter((v): v is V => v !== undefined)
       const merged = Array.from(new Set([...selectedValues, ...toAdd]))
-      // antd parity: never exceed maxCount when tokenizing.
+      // Never exceed maxCount when tokenizing.
       const next = maxCount !== undefined ? merged.slice(0, maxCount) : merged
       if (next.length === selectedValues.length) return
       const optOf = (v: V) => allFlatMap.get(v) ?? ({ label: String(v), value: v } as SelectOption<V>)
@@ -994,8 +992,8 @@ function SelectInner<V extends SelectValue = string>(
   )
 
   // ── Derived ──────────────────────────────────────────────────────────────────
-  // antd parity: optionLabelProp picks which option field the selector shows for a
-  // chosen value (default `label`); the dropdown always renders the full label.
+  // optionLabelProp picks which option field the selector shows for a chosen
+  // value (default `label`); the dropdown always renders the full label.
   const getOptionLabel = React.useCallback(
     (opt: SelectOption<V>): React.ReactNode =>
       optionLabelProp ? (opt[optionLabelProp] as React.ReactNode) : opt.label,
@@ -1024,8 +1022,8 @@ function SelectInner<V extends SelectValue = string>(
   const overflowTags = effectiveMax !== undefined ? allTags.slice(effectiveMax) : []
 
   const hasValue = selectedValues.length > 0
-  // antd parity: one icon slot. Clear takes over on hover when clearable; while
-  // actively searching the arrow becomes a search icon; otherwise the arrow.
+  // One icon slot. Clear takes over on hover when clearable; while actively
+  // searching the arrow becomes a search icon; otherwise the arrow.
   const showClear = allowClear && hasValue && !disabled && !loading && hovered
   const showSearchIcon = showSearch && open && !suffixIcon
 
@@ -1042,8 +1040,8 @@ function SelectInner<V extends SelectValue = string>(
   const maxReached = isMultiple && maxCount !== undefined && selectedValues.length >= maxCount
 
   // ── Dropdown menu ─────────────────────────────────────────────────────────────
-  // antd parity: the search input lives in the selector (trigger), not here —
-  // the popup is purely the option list.
+  // The search input lives in the selector (trigger), not here — the popup is
+  // purely the option list.
   const menuEl: React.ReactElement = (
     <div data-gjs-select-menu="" className="flex flex-col">
       {filteredOptions.length === 0 ? (
@@ -1116,8 +1114,8 @@ function SelectInner<V extends SelectValue = string>(
           style={style}
           className={cn(
             triggerVariants({ variant, size, status: status ?? "none" }),
-            // antd parity: the multiple control hugs its tags (≈4px) vs the
-            // single control's roomier inset.
+            // The multiple control hugs its tags (≈4px) vs the single control's
+            // roomier inset.
             isMultiple && "px-1",
             disabled && "cursor-not-allowed opacity-50 pointer-events-none",
             className,
@@ -1190,7 +1188,7 @@ function SelectInner<V extends SelectValue = string>(
           )}
 
           {/* Selection area: the value/placeholder plus the inline search input.
-              antd parity — typing happens inside the selector, not the popup. */}
+              Typing happens inside the selector, not the popup. */}
           <span
             data-gjs-select-selection=""
             className="gjs-select-selection relative flex min-w-0 flex-1 items-center"
@@ -1245,7 +1243,7 @@ function SelectInner<V extends SelectValue = string>(
                     : showSearch && open
                       // Open + searchable: keep the input visible (transparent) so
                       // its text caret shows over the value/placeholder — signals
-                      // the field is typable (antd parity).
+                      // the field is typable.
                       ? "absolute inset-0 size-full"
                       : "absolute inset-0 size-full cursor-default opacity-0",
               )}

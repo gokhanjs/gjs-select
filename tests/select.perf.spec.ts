@@ -9,8 +9,8 @@ const T = {
   SELECT: 600,         // click option → dropdown closes (includes Radix Popover exit animation)
 }
 
-// Matches both virtual path (<input data-gjs-select-search>) and cmdk path (<input cmdk-input>)
-const SEARCH_INPUT = '[data-gjs-select-search], [cmdk-input]'
+// The search input inside the trigger.
+const SEARCH_INPUT = '[data-gjs-select-search]'
 
 async function measureMs(fn: () => Promise<void>): Promise<number> {
   const start = Date.now()
@@ -34,25 +34,25 @@ test.describe("Performance — 1 000 options", () => {
     const trigger = page.getByTestId("perf-select")
     const elapsed = await measureMs(async () => {
       await trigger.click()
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { timeout: T.OPEN })
+      await page.waitForSelector('[role="listbox"]', { timeout: T.OPEN })
     })
     expect(elapsed, `open took ${elapsed}ms, limit ${T.OPEN}ms`).toBeLessThan(T.OPEN)
   })
 
   test("dropdown closes within threshold", async ({ page }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const elapsed = await measureMs(async () => {
       await page.keyboard.press("Escape")
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { state: "hidden", timeout: T.CLOSE })
+      await page.waitForSelector('[role="listbox"]', { state: "hidden", timeout: T.CLOSE })
     })
     expect(elapsed, `close took ${elapsed}ms, limit ${T.CLOSE}ms`).toBeLessThan(T.CLOSE)
   })
 
   test("search filters within threshold", async ({ page }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const input = page.locator(SEARCH_INPUT).first()
     await input.click()
@@ -61,7 +61,7 @@ test.describe("Performance — 1 000 options", () => {
       await input.fill("Option 500")
       await page.waitForFunction(
         () => {
-          const items = document.querySelectorAll('[data-gjs-select-item], [cmdk-item]')
+          const items = document.querySelectorAll('[data-gjs-select-option]')
           return items.length < 10
         },
         { timeout: T.SEARCH }
@@ -72,7 +72,7 @@ test.describe("Performance — 1 000 options", () => {
 
   test("selecting an option closes dropdown within threshold", async ({ page }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const firstItem = page
       .locator('[data-gjs-select-option]:not([data-disabled])')
@@ -80,7 +80,7 @@ test.describe("Performance — 1 000 options", () => {
 
     const elapsed = await measureMs(async () => {
       await firstItem.click()
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { state: "hidden", timeout: T.SELECT })
+      await page.waitForSelector('[role="listbox"]', { state: "hidden", timeout: T.SELECT })
     })
     expect(elapsed, `select took ${elapsed}ms, limit ${T.SELECT}ms`).toBeLessThan(T.SELECT)
   })
@@ -98,14 +98,14 @@ test.describe("Performance — 5 000 options", () => {
   test("dropdown opens within threshold", async ({ page }) => {
     const elapsed = await measureMs(async () => {
       await page.getByTestId("perf-select").click()
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { timeout: LIMITS.OPEN })
+      await page.waitForSelector('[role="listbox"]', { timeout: LIMITS.OPEN })
     })
     expect(elapsed).toBeLessThan(LIMITS.OPEN)
   })
 
   test("search filters within threshold", async ({ page }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const input = page.locator(SEARCH_INPUT).first()
     await input.click()
@@ -113,7 +113,7 @@ test.describe("Performance — 5 000 options", () => {
     const elapsed = await measureMs(async () => {
       await input.fill("Option 2500")
       await page.waitForFunction(
-        () => document.querySelectorAll('[data-gjs-select-item], [cmdk-item]').length < 20,
+        () => document.querySelectorAll('[data-gjs-select-option]').length < 20,
         { timeout: LIMITS.SEARCH }
       )
     })
@@ -133,7 +133,7 @@ test.describe("Performance — 10 000 options", () => {
   test("dropdown opens within threshold", async ({ page }) => {
     const elapsed = await measureMs(async () => {
       await page.getByTestId("perf-select").click()
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { timeout: LIMITS.OPEN })
+      await page.waitForSelector('[role="listbox"]', { timeout: LIMITS.OPEN })
     })
     expect(elapsed).toBeLessThan(LIMITS.OPEN)
   })
@@ -151,7 +151,7 @@ test.describe("Performance — 10 000 options", () => {
 
   test("search filters within threshold", async ({ page }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const input = page.locator(SEARCH_INPUT).first()
     await input.click()
@@ -159,7 +159,7 @@ test.describe("Performance — 10 000 options", () => {
     const elapsed = await measureMs(async () => {
       await input.fill("Option 9999")
       await page.waitForFunction(
-        () => document.querySelectorAll('[data-gjs-select-item], [cmdk-item]').length < 5,
+        () => document.querySelectorAll('[data-gjs-select-option]').length < 5,
         { timeout: LIMITS.SEARCH }
       )
     })
@@ -168,7 +168,7 @@ test.describe("Performance — 10 000 options", () => {
 
   test("JS heap does not exceed 150 MB after open", async ({ page, context }) => {
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const client = await context.newCDPSession(page)
     const { result } = await client.send("Runtime.evaluate", {
@@ -186,7 +186,7 @@ test.describe("Performance — rendering consistency", () => {
   test("DOM node count stays bounded with virtual list (10k options)", async ({ page, context }) => {
     await goToTestPage(page, 10000)
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const client = await context.newCDPSession(page)
     const metrics = await client.send("Performance.getMetrics")

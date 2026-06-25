@@ -15,8 +15,8 @@ function option(page: Page, label: string): Locator {
 }
 
 function searchInput(page: Page): Locator {
-  // The search input now lives inside each selector (antd parity), so scope to
-  // the open select rather than grabbing the first input on the page.
+  // The search input now lives inside each selector, so scope to the open
+  // select rather than grabbing the first input on the page.
   return page.locator("[data-gjs-select-trigger][data-open] [data-gjs-select-search]")
 }
 
@@ -217,7 +217,7 @@ test("multiple mode: removes tag via close button", async ({ page }) => {
 test("multiple mode: selected option shows check icon", async ({ page }) => {
   await openSelect(page, 3)
   const appleOpt = option(page, "Apple")
-  // Before selecting — no indicator (antd shows the check only when selected)
+  // Before selecting — no indicator (the check shows only when selected)
   await expect(appleOpt.locator("[data-gjs-select-option-check]")).toHaveCount(0)
   await appleOpt.click()
   // After selecting — the trailing check icon appears
@@ -310,7 +310,7 @@ test("maxCount blocks selecting beyond the limit and disables the rest", async (
   await page.locator("[data-gjs-select-option]").nth(0).click()
   await page.locator("[data-gjs-select-option]").nth(1).click()
   await expect(t.locator("[data-gjs-select-tag]")).toHaveCount(2)
-  // remaining unselected options are now disabled (antd parity)
+  // remaining unselected options are now disabled
   await expect(
     page.locator("[data-gjs-select-option]:not([data-selected])").first(),
   ).toHaveAttribute("aria-disabled", "true")
@@ -488,7 +488,7 @@ test("custom optionRender: opens and shows options", async ({ page }) => {
 
 // ─── 17. Accessibility attributes ─────────────────────────────────────────────
 
-test("aria-controls points to listbox after dropdown opens (cmdk path)", async ({ page }) => {
+test("aria-controls points to listbox after dropdown opens", async ({ page }) => {
   const t = trigger(page, 0)
   // aria-controls is set after the portal mounts (needs open)
   await t.click()
@@ -500,7 +500,7 @@ test("aria-controls points to listbox after dropdown opens (cmdk path)", async (
   await expect(listbox).toBeAttached()
 })
 
-test("aria-activedescendant updates on ArrowDown (cmdk path)", async ({ page }) => {
+test("aria-activedescendant updates on ArrowDown", async ({ page }) => {
   const t = trigger(page, 0)
   await t.click()
   await expect(dropdown(page)).toBeVisible()
@@ -626,7 +626,7 @@ test("Backspace on trigger removes last tag when dropdown closed", async ({ page
   await expect(page.locator("[data-gjs-select-tag]")).toHaveCount(1)
 })
 
-test("Backspace in empty search removes last tag (cmdk)", async ({ page }) => {
+test("Backspace in empty search removes last tag", async ({ page }) => {
   await page.goto("/demo")
   const multiTrigger = page.locator("[data-gjs-select-trigger]").nth(3)
   await multiTrigger.click()

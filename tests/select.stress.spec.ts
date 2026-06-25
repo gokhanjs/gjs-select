@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-const SEARCH_INPUT = '[data-gjs-select-search], [cmdk-input]'
+const SEARCH_INPUT = '[data-gjs-select-search]'
 
 // NOTE: 100 rapid cycles reveal a timing race in Radix Popover's open/close animation.
 // 20 cycles reliably catches crashes without hitting animation-timing edge cases.
@@ -14,14 +14,14 @@ test.describe("Stress — rapid open/close cycles", () => {
 
     for (let i = 0; i < CYCLE_COUNT; i++) {
       await trigger.click({ timeout: 2000 })
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { timeout: 2000 })
+      await page.waitForSelector('[role="listbox"]', { timeout: 2000 })
       await page.keyboard.press("Escape")
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { state: "hidden", timeout: 2000 })
+      await page.waitForSelector('[role="listbox"]', { state: "hidden", timeout: 2000 })
     }
 
     // Component must still be interactive after cycles
     await trigger.click({ timeout: 2000 })
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeVisible()
+    await expect(page.locator('[role="listbox"]').first()).toBeVisible()
   })
 
   test(`JS heap growth stays below 50% after ${CYCLE_COUNT} cycles`, async ({ page, context }) => {
@@ -39,9 +39,9 @@ test.describe("Stress — rapid open/close cycles", () => {
     const trigger = page.locator('[data-gjs-select-trigger]:not([data-disabled])').first()
     for (let i = 0; i < CYCLE_COUNT; i++) {
       await trigger.click({ timeout: 2000 })
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { timeout: 2000 })
+      await page.waitForSelector('[role="listbox"]', { timeout: 2000 })
       await page.keyboard.press("Escape")
-      await page.waitForSelector('[role="listbox"], [cmdk-list]', { state: "hidden", timeout: 2000 })
+      await page.waitForSelector('[role="listbox"]', { state: "hidden", timeout: 2000 })
     }
 
     // Force GC and measure after
@@ -67,7 +67,7 @@ test.describe("Stress — rapid keyboard navigation", () => {
 
     const trigger = page.getByTestId("perf-select")
     await trigger.click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     for (let i = 0; i < 50; i++) {
       await page.keyboard.press("ArrowDown")
@@ -77,7 +77,7 @@ test.describe("Stress — rapid keyboard navigation", () => {
     }
 
     // Must still be open and responsive
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeVisible()
+    await expect(page.locator('[role="listbox"]').first()).toBeVisible()
   })
 
   test("rapid typing in search does not cause stale state", async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe("Stress — rapid keyboard navigation", () => {
     await page.waitForSelector('[data-testid="option-count"]')
 
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const input = page.locator(SEARCH_INPUT).first()
     await input.click()
@@ -116,7 +116,7 @@ test.describe("Stress — multiple selection rapid interaction", () => {
 
     // Select first 5 options
     await multiTrigger.click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
     const items = page.locator('[data-gjs-select-option]:not([data-disabled])')
     const count = Math.min(await items.count(), 5)
 
@@ -134,7 +134,7 @@ test.describe("Stress — multiple selection rapid interaction", () => {
 
     // Trigger must still be focusable
     await multiTrigger.click()
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeVisible()
+    await expect(page.locator('[role="listbox"]').first()).toBeVisible()
   })
 })
 
@@ -144,7 +144,7 @@ test.describe("Stress — concurrent state changes", () => {
     await page.waitForSelector('[data-testid="option-count"]')
 
     await page.getByTestId("perf-select").click()
-    await page.waitForSelector('[role="listbox"], [cmdk-list]')
+    await page.waitForSelector('[role="listbox"]')
 
     const input = page.locator(SEARCH_INPUT).first()
     await input.click()
@@ -156,7 +156,7 @@ test.describe("Stress — concurrent state changes", () => {
     await firstItem.click()
 
     // Dropdown must close after selection
-    await expect(page.locator('[role="listbox"], [cmdk-list]').first()).toBeHidden({ timeout: 1000 })
+    await expect(page.locator('[role="listbox"]').first()).toBeHidden({ timeout: 1000 })
 
     // Trigger must show selected value (not empty)
     const triggerText = await page.getByTestId("perf-select").textContent()
