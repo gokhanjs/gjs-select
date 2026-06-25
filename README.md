@@ -39,6 +39,8 @@ The `shadcn` CLI installs these runtime dependencies for you:
 
 No other shadcn components are required — `select.tsx` is self-contained.
 
+The optional react-hook-form integration shown in the demos (`SelectFormField`) additionally needs `react-hook-form`, `zod`, and `@hookform/resolvers` — install these only if you adopt that pattern.
+
 ## Installation
 
 ```bash
