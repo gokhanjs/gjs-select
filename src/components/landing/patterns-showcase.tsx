@@ -69,7 +69,7 @@ export function PatternsShowcase() {
         />
 
         <div className="mt-10 space-y-5">
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <PatternBlock
               title="Debounced async search"
               description="showSearch · filterOption={false} · onSearch → fetch · loading — server-side filtering over a live API route."
