@@ -29,7 +29,7 @@ function FieldLabel({ children }: { children: string }) {
 }
 
 export function UsagePlayground() {
-  const [mode, setMode] = useState<Mode>("single")
+  const [mode, setMode] = useState<Mode>("multiple")
   const [size, setSize] = useState<Size>("middle")
   const [showSearch, setShowSearch] = useState(true)
   const [allowClear, setAllowClear] = useState(true)

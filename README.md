@@ -7,7 +7,7 @@ shadcn CLI, so the source lives in your repo and you own every line.
 
 🔗 **[Live docs & playground →](https://gjs-select.gokhanyildiz.dev)**
 
-![gjs-select in action — single, multiple, and tags modes](example.gif)
+[![gjs-select — multi-select with built-in search, plus tags and single modes](image.png)](https://gjs-select.gokhanyildiz.dev)
 
 ## Features
 
@@ -19,16 +19,34 @@ shadcn CLI, so the source lives in your repo and you own every line.
 - **Themeable** — variants (`outlined`/`filled`/`borderless`), sizes (`small`/`middle`/`large`), `status`, RTL via `direction`, and stable `gjs-select-*` hooks on every part.
 - **Zero config** — built on Radix Popover; styled with your existing shadcn/ui tokens.
 
+## Requirements
+
+`gjs-select` is a copy-paste shadcn/ui component, so it assumes a standard
+shadcn/ui project is already in place:
+
+- A **React 18.2+** project (React 19 supported) — Next.js, Vite, etc.
+- **Tailwind CSS** with shadcn/ui tokens configured
+- The shadcn **`cn` utility** (`@/lib/utils`) — installed automatically as the `utils` registry dependency
+
+The `shadcn` CLI installs these runtime dependencies for you:
+
+| Package | Why it's needed |
+| --- | --- |
+| `radix-ui` | Popover primitive — positioning, focus management, dismiss |
+| `@tanstack/react-virtual` | List virtualization for large option sets |
+| `class-variance-authority` | Variant / size style composition |
+| `lucide-react` | Icons (chevron, check, clear ✕) |
+
+No other shadcn components are required — `select.tsx` is self-contained.
+
 ## Installation
 
 ```bash
 npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json
 ```
 
-This drops `select.tsx` into `components/ui/` and installs its dependencies
-(`radix-ui`, `@tanstack/react-virtual`, `class-variance-authority`,
-`lucide-react`). It assumes a standard shadcn/ui project (the `cn` util and
-Tailwind tokens are already present).
+This drops `select.tsx` into `components/ui/` and installs the runtime
+dependencies listed above.
 
 ## Usage
 

@@ -37,8 +37,8 @@ export function PatternsShowcase() {
 
         <div className="mt-10 space-y-5">
           <PatternBlock
-            title="Server & client components"
-            description="The same Select rendered by a Server Component and a Client Component, side by side."
+            title="Drop into Server Components"
+            description="Select is a client island — render it straight inside a Server Component page (the App Router pattern), shown beside a Client Component for comparison."
           >
             <RenderModes />
           </PatternBlock>
