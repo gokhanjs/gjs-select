@@ -1,7 +1,31 @@
 {
-  "name": "select-component",
+  "name": "gjs-select",
   "version": "0.1.0",
   "private": true,
+  "description": "A feature-complete, accessible Select for React and shadcn/ui — single, multiple, and tags modes, built-in search, virtualized lists, and antd-grade behavior. Install by copy-paste with the shadcn CLI.",
+  "license": "MIT",
+  "author": "gokhanjs",
+  "homepage": "https://gjs-select.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gokhanjs/gjs-select.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gokhanjs/gjs-select/issues"
+  },
+  "keywords": [
+    "react",
+    "select",
+    "shadcn",
+    "shadcn-ui",
+    "combobox",
+    "multi-select",
+    "tags-input",
+    "accessible",
+    "virtualized",
+    "tailwindcss",
+    "radix-ui"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
