@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { CodeBlock } from "@/components/landing/code-block"
 import { SectionHeading } from "@/components/landing/section-heading"
 

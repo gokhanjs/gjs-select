@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Controller, ControllerProps, FieldPath, FieldValues } from "react-hook-form"
-import { Select, SelectProps, SelectValue } from "./select"
+import { Select, SelectProps, SelectValue } from "./gjs-select"
 import { cn } from "@/lib/utils"
 
 // ─── Internal form primitives ─────────────────────────────────────────────────

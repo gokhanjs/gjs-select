@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { SectionHeading } from "@/components/landing/section-heading"
 import { cn } from "@/lib/utils"
 

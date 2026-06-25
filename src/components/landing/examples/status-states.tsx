@@ -1,6 +1,6 @@
 "use client"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const PLANS = [
   { label: "Hobby", value: "hobby" },

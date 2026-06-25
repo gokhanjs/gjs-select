@@ -37,7 +37,7 @@ The `shadcn` CLI installs these runtime dependencies for you:
 | `class-variance-authority` | Variant / size style composition |
 | `lucide-react` | Icons (chevron, check, clear ✕) |
 
-No other shadcn components are required — `select.tsx` is self-contained.
+No other shadcn components are required — `gjs-select.tsx` is self-contained.
 
 The optional react-hook-form integration shown in the demos (`SelectFormField`) additionally needs `react-hook-form`, `zod`, and `@hookform/resolvers` — install these only if you adopt that pattern.
 
@@ -47,13 +47,13 @@ The optional react-hook-form integration shown in the demos (`SelectFormField`) 
 npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json
 ```
 
-This drops `select.tsx` into `components/ui/` and installs the runtime
+This drops `gjs-select.tsx` into `components/ui/` and installs the runtime
 dependencies listed above.
 
 ## Usage
 
 ```tsx
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const options = [
   { label: "Apple", value: "apple" },
@@ -115,7 +115,7 @@ see the **[live docs](https://gjs-select.gokhanyildiz.dev)** for the complete re
 ## Styling
 
 Because the source lives in your repo, the primary way to restyle is to **edit
-`select.tsx` directly** — change the Tailwind classes to taste.
+`gjs-select.tsx` directly** — change the Tailwind classes to taste.
 
 For targeted overrides without touching the source, every part carries a stable
 `gjs-select-*` class and a matching `data-gjs-select-*` attribute:

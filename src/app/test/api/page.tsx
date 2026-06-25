@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { notFound } from "next/navigation"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 // Isolated fixtures for Phase 4 API props, driven by query params so the
 // functional suite can exercise each prop without touching the main demo page

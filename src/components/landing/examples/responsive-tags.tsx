@@ -1,6 +1,6 @@
 "use client"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const ROLES = [
   { label: "Senior Frontend Engineer", value: "fe" },

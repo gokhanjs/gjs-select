@@ -1,7 +1,7 @@
 import { ArrowRight, Star, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { CodeBlock } from "@/components/landing/code-block"
 import { site } from "@/lib/site"
 

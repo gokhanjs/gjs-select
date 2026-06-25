@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { SelectFormField } from "@/components/ui/select-form"
 
 const FRUITS = [

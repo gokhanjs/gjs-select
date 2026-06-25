@@ -3,7 +3,7 @@
 import * as React from "react"
 import { X } from "lucide-react"
 
-import { Select, type SelectOption } from "@/components/ui/select"
+import { Select, type SelectOption } from "@/components/ui/gjs-select"
 import { cn } from "@/lib/utils"
 
 // Extra fields ride along on each option (SelectOption allows arbitrary keys)

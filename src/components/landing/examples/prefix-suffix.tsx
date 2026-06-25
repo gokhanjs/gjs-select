@@ -2,7 +2,7 @@
 
 import { ChevronsUpDown, Globe } from "lucide-react"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const REGIONS = [
   { label: "United States", value: "us" },

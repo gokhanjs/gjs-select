@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Select, type SelectOption } from "@/components/ui/select"
+import { Select, type SelectOption } from "@/components/ui/gjs-select"
 
 const COUNT = 10_000
 // Format with a fixed locale so the server (en-US) and the client (any locale)

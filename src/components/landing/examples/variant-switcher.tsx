@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { cn } from "@/lib/utils"
 
 const VARIANTS = ["outlined", "filled", "borderless"] as const

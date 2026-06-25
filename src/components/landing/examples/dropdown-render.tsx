@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react"
 
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const LABELS = [
   { label: "Bug", value: "bug" },

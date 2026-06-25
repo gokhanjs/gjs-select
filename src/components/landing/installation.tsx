@@ -16,7 +16,7 @@ const RUNNERS = {
 
 type Runner = keyof typeof RUNNERS
 
-const USAGE_SNIPPET = `import { Select } from "@/components/ui/select"
+const USAGE_SNIPPET = `import { Select } from "@/components/ui/gjs-select"
 
 const options = [
   { label: "Apple", value: "apple" },
@@ -44,7 +44,7 @@ export function Installation() {
         <SectionHeading
           eyebrow="Get started"
           title="Installation"
-          description="Add the component with the shadcn CLI — it drops select.tsx straight into your components/ui. No package to install, no styles to import. You own the code and edit it like any other file."
+          description="Add the component with the shadcn CLI — it drops gjs-select.tsx straight into your components/ui. No package to install, no styles to import. You own the code and edit it like any other file."
         />
 
         <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">

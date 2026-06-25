@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Select, type SelectOption } from "@/components/ui/select"
+import { Select, type SelectOption } from "@/components/ui/gjs-select"
 
 // Tiny debounce — no dependency, so the whole pattern is copy-pasteable. The
 // callback is read from a ref so it never goes stale without re-creating the

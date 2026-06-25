@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { notFound } from "next/navigation"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 export default function TestPage() {
   // Test-only fixture: render in dev for Playwright, 404 on the public build.
