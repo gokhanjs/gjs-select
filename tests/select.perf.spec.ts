@@ -3,7 +3,7 @@ import { type Page, expect, test } from "@playwright/test"
 // Thresholds (ms)
 const T = {
   OPEN: 300,           // trigger click → dropdown visible
-  CLOSE: 200,          // Escape → dropdown hidden
+  CLOSE: 400,          // Escape → dropdown hidden (includes the 150ms Radix Popover exit animation)
   SEARCH: 200,         // type char → filtered results appear
   FIRST_ITEM_VISIBLE: 1000, // first virtual row renders
   SELECT: 600,         // click option → dropdown closes (includes Radix Popover exit animation)
