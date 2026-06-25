@@ -28,6 +28,9 @@
 # production
 /build
 
+# shadcn registry output (generated at build time via `shadcn build`)
+/public/r/
+
 # misc
 .DS_Store
 *.pem
