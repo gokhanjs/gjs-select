@@ -7,6 +7,8 @@ shadcn CLI, so the source lives in your repo and you own every line.
 
 🔗 **[Live docs & playground →](https://gjs-select.vercel.app)**
 
+![gjs-select in action — single, multiple, and tags modes](example.gif)
+
 ## Features
 
 - **Three modes** — single, `multiple`, and `tags` (free typing with `tokenSeparators`).
