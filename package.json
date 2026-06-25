@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "shadcn build && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "playwright test --project=functional",
