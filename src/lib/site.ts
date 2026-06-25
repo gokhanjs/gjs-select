@@ -8,6 +8,20 @@ export const site = {
     "A feature-complete, accessible Select for React and shadcn/ui — single, multiple, and tags modes, built-in search, virtualized lists, and antd-grade behavior. Install by copy-paste with the shadcn CLI.",
   url: "https://gjs-select.vercel.app",
   github: "https://github.com/gokhanjs/gjs-select",
+  author: "gokhanjs",
+  keywords: [
+    "react select component",
+    "shadcn select",
+    "shadcn ui select",
+    "shadcn ui multi select",
+    "antd select alternative",
+    "accessible react select",
+    "virtualized react select",
+    "react combobox",
+    "react multi select",
+    "tags input react",
+    "tailwind select component",
+  ],
   get registry() {
     return `${this.url}/r/gjs-select.json`
   },

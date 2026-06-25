@@ -9,9 +9,38 @@ import "./globals.css"
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"] })
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] })
 
+const fullTitle = `${site.name} — ${site.tagline}`
+
 export const metadata: Metadata = {
-  title: `${site.name} — ${site.tagline}`,
+  metadataBase: new URL(site.url),
+  title: {
+    default: fullTitle,
+    template: `%s — ${site.name}`,
+  },
   description: site.description,
+  keywords: [...site.keywords],
+  applicationName: site.name,
+  authors: [{ name: site.author, url: site.github }],
+  creator: site.author,
+  category: "technology",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: site.url,
+    siteName: site.name,
+    title: fullTitle,
+    description: site.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: fullTitle,
+    description: site.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 }
 
 export default function RootLayout({
