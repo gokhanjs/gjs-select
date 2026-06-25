@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { CodeBlock } from "@/components/landing/code-block"
 import { SectionHeading } from "@/components/landing/section-heading"
 
@@ -29,7 +29,7 @@ function FieldLabel({ children }: { children: string }) {
 }
 
 export function UsagePlayground() {
-  const [mode, setMode] = useState<Mode>("single")
+  const [mode, setMode] = useState<Mode>("multiple")
   const [size, setSize] = useState<Size>("middle")
   const [showSearch, setShowSearch] = useState(true)
   const [allowClear, setAllowClear] = useState(true)

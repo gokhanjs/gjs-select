@@ -1,7 +1,7 @@
 import { ArrowRight, Star, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { CodeBlock } from "@/components/landing/code-block"
 import { site } from "@/lib/site"
 
@@ -57,10 +57,13 @@ export function Hero() {
             </p>
             <Select
               options={FRAMEWORKS}
+              mode="multiple"
+              defaultValue={["next", "remix"]}
+              maxTagCount="responsive"
               showSearch
               allowClear
-              placeholder="Search a framework…"
-              aria-label="Framework picker demo"
+              placeholder="Search frameworks…"
+              aria-label="Framework multi-select demo"
             />
           </div>
           <CodeBlock code={site.installCmd} language="bash" filename="terminal" />

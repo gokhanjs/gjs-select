@@ -7,7 +7,7 @@ shadcn CLI, so the source lives in your repo and you own every line.
 
 🔗 **[Live docs & playground →](https://gjs-select.gokhanyildiz.dev)**
 
-![gjs-select in action — single, multiple, and tags modes](example.gif)
+[![gjs-select — multi-select with built-in search, plus tags and single modes](image.png)](https://gjs-select.gokhanyildiz.dev)
 
 ## Features
 
@@ -19,21 +19,41 @@ shadcn CLI, so the source lives in your repo and you own every line.
 - **Themeable** — variants (`outlined`/`filled`/`borderless`), sizes (`small`/`middle`/`large`), `status`, RTL via `direction`, and stable `gjs-select-*` hooks on every part.
 - **Zero config** — built on Radix Popover; styled with your existing shadcn/ui tokens.
 
+## Requirements
+
+`gjs-select` is a copy-paste shadcn/ui component, so it assumes a standard
+shadcn/ui project is already in place:
+
+- A **React 18.2+** project (React 19 supported) — Next.js, Vite, etc.
+- **Tailwind CSS** with shadcn/ui tokens configured
+- The shadcn **`cn` utility** (`@/lib/utils`) — installed automatically as the `utils` registry dependency
+
+The `shadcn` CLI installs these runtime dependencies for you:
+
+| Package | Why it's needed |
+| --- | --- |
+| `radix-ui` | Popover primitive — positioning, focus management, dismiss |
+| `@tanstack/react-virtual` | List virtualization for large option sets |
+| `class-variance-authority` | Variant / size style composition |
+| `lucide-react` | Icons (chevron, check, clear ✕) |
+
+No other shadcn components are required — `gjs-select.tsx` is self-contained.
+
+The optional react-hook-form integration shown in the demos (`SelectFormField`) additionally needs `react-hook-form`, `zod`, and `@hookform/resolvers` — install these only if you adopt that pattern.
+
 ## Installation
 
 ```bash
 npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json
 ```
 
-This drops `select.tsx` into `components/ui/` and installs its dependencies
-(`radix-ui`, `@tanstack/react-virtual`, `class-variance-authority`,
-`lucide-react`). It assumes a standard shadcn/ui project (the `cn` util and
-Tailwind tokens are already present).
+This drops `gjs-select.tsx` into `components/ui/` and installs the runtime
+dependencies listed above.
 
 ## Usage
 
 ```tsx
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 
 const options = [
   { label: "Apple", value: "apple" },
@@ -95,7 +115,7 @@ see the **[live docs](https://gjs-select.gokhanyildiz.dev)** for the complete re
 ## Styling
 
 Because the source lives in your repo, the primary way to restyle is to **edit
-`select.tsx` directly** — change the Tailwind classes to taste.
+`gjs-select.tsx` directly** — change the Tailwind classes to taste.
 
 For targeted overrides without touching the source, every part carries a stable
 `gjs-select-*` class and a matching `data-gjs-select-*` attribute:

@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { notFound } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Select } from "@/components/ui/select"
+import { Select } from "@/components/ui/gjs-select"
 import { SelectFormField } from "@/components/ui/select-form"
 
 const FRUITS = [
@@ -124,6 +125,9 @@ function RHFDemo() {
 }
 
 export default function Page() {
+  // Test-only fixture: render in dev for Playwright, 404 on the public build.
+  if (process.env.NODE_ENV === "production") notFound()
+
   const [single, setSingle] = useState<string | null>(null)
   const [multi, setMulti] = useState<string[]>([])
   const [tags, setTags] = useState<string[]>([])

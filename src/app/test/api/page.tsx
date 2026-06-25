@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Select } from "@/components/ui/select"
+import { notFound } from "next/navigation"
+import { Select } from "@/components/ui/gjs-select"
 
 // Isolated fixtures for Phase 4 API props, driven by query params so the
 // functional suite can exercise each prop without touching the main demo page
@@ -16,6 +17,9 @@ const OPTIONS = [
 ]
 
 export default function ApiFixturePage() {
+  // Test-only fixture: render in dev for Playwright, 404 on the public build.
+  if (process.env.NODE_ENV === "production") notFound()
+
   const [ready, setReady] = useState(false)
   const [autofocus, setAutofocus] = useState(false)
   const [entered, setEntered] = useState(false)

@@ -1208,13 +1208,19 @@ function SelectInner<V extends SelectValue = string>(
             {isMultiple &&
               visibleTags.map(({ value, label, disabled: td }) =>
                 tagRender ? (
-                  tagRender({
-                    label,
-                    value,
-                    disabled: td || disabled,
-                    closable: !disabled,
-                    onClose: (e) => handleDeselect(value, e),
-                  })
+                  // A custom tag is one item in a mapped list, so it needs a
+                  // stable key. Inject it here (matching the built-in branch)
+                  // rather than asking every caller to remember it.
+                  React.cloneElement(
+                    tagRender({
+                      label,
+                      value,
+                      disabled: td || disabled,
+                      closable: !disabled,
+                      onClose: (e) => handleDeselect(value, e),
+                    }),
+                    { key: String(value) },
+                  )
                 ) : (
                   <SelectTag
                     key={String(value)}

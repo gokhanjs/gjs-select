@@ -16,7 +16,7 @@
       "registryDependencies": ["utils"],
       "files": [
         {
-          "path": "src/components/ui/select.tsx",
+          "path": "src/components/ui/gjs-select.tsx",
           "type": "registry:ui"
         }
       ]

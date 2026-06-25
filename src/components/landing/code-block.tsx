@@ -11,6 +11,8 @@ interface CodeBlockProps {
   language?: string
   filename?: string
   className?: string
+  /** Cap the code area height and scroll within it — for long source listings. */
+  scroll?: boolean
 }
 
 export function CodeBlock({
@@ -18,6 +20,7 @@ export function CodeBlock({
   language = "tsx",
   filename,
   className,
+  scroll = false,
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
 
@@ -51,7 +54,12 @@ export function CodeBlock({
           )}
         </Button>
       </div>
-      <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+      <pre
+        className={cn(
+          "p-4 text-sm leading-relaxed",
+          scroll ? "max-h-96 overflow-auto" : "overflow-x-auto",
+        )}
+      >
         <code className="font-mono text-foreground/90">{code}</code>
       </pre>
     </div>
