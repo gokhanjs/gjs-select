@@ -706,7 +706,13 @@ function SelectInner<V extends SelectValue = string>(
   // ── Value state ─────────────────────────────────────────────────────────────
   const toArray = React.useCallback((v: V | V[] | null | undefined): V[] => {
     if (v == null) return []
-    if (Array.isArray(v)) return v
+    if (Array.isArray(v)) {
+      // labelInValue arrays (controlled multiple/tags) arrive as {label,value}[];
+      // unwrap each element to its raw value so downstream comparisons work.
+      return labelInValue
+        ? v.map((el) => (el && typeof el === "object" ? (el as { value: V }).value : el))
+        : v
+    }
     if (labelInValue && typeof v === "object") return [(v as { value: V }).value]
     return [v]
   }, [labelInValue])
