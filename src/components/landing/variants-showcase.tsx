@@ -62,8 +62,8 @@ export function VariantsShowcase() {
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <SectionHeading
           eyebrow="Showcase"
-          title="Every mode, out of the box"
-          description="Single, multiple, and tags modes; search, clear, optgroups, sizes, and built-in states — all driven by simple props."
+          title="Single, multi-select & tags — every mode, out of the box"
+          description="Single-select, multi-select, and tags modes; search, clear, optgroups, sizes, and built-in states — all driven by simple props."
         />
 
         <div className="mt-10 grid gap-5 md:grid-cols-2">
