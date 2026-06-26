@@ -12,9 +12,13 @@ export const site = {
   keywords: [
     "react select component",
     "shadcn select",
+    "shadcn select component",
     "shadcn ui select",
     "shadcn ui multi select",
+    "shadcn multiselect",
+    "shadcn combobox",
     "antd select alternative",
+    "ant design select",
     "accessible react select",
     "virtualized react select",
     "react combobox",

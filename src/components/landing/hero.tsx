@@ -29,9 +29,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 text-pretty text-lg leading-relaxed text-muted-foreground">
-            Single, multiple, and tags modes. Built-in search, virtualized lists,
-            and full keyboard &amp; screen-reader support — production-grade behavior in
-            one copy-paste component.
+            A single-select, multi-select, and tags combobox for shadcn/ui —
+            built-in search, virtualized lists, full keyboard &amp; screen-reader
+            support, and Ant Design Select parity in one copy-paste component.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
