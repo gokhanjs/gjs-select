@@ -32,7 +32,7 @@ export function SelectFormDemo() {
   const [submitted, setSubmitted] = React.useState<FormValues | null>(null)
   const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { framework: "", features: [] },
+    defaultValues: { framework: null as unknown as string, features: [] },
   })
 
   return (
@@ -40,7 +40,7 @@ export function SelectFormDemo() {
       onSubmit={handleSubmit((values) => setSubmitted(values))}
       className="grid gap-5 sm:grid-cols-2"
     >
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <SelectFormField
           control={control}
           name="framework"
@@ -62,7 +62,7 @@ export function SelectFormDemo() {
         />
         <Button type="submit">Validate</Button>
       </div>
-      <div className="space-y-1.5">
+      <div className="min-w-0 space-y-1.5">
         <p className="text-xs font-medium text-muted-foreground">
           Submitted payload
         </p>
