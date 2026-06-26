@@ -476,7 +476,7 @@ function OptionListInner<V extends SelectValue>(
         data-active={isActive || undefined}
         data-disabled={disabled || undefined}
         role="option"
-        aria-selected={isActive}
+        aria-selected={isSelected}
         aria-disabled={disabled || undefined}
         className={cn(
           "gjs-select-option flex cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-none transition-colors",
