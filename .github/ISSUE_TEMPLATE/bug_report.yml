@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a bug in gjs-select
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug. Please fill out the sections below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Steps to reproduce, ideally with a minimal code snippet or a StackBlitz/CodeSandbox link.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: gjs-select version / commit
+      description: Which release tag or commit of gjs-select.tsx are you using?
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: React version, framework (Next.js / Vite / …), browser, and OS.
+    validations:
+      required: false
