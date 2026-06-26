@@ -760,7 +760,9 @@ function SelectInner<V extends SelectValue = string>(
   // getPopupContainer chooses where the dropdown portals. Resolved after mount
   // since it receives the (now-rendered) trigger node.
   const [popupContainer, setPopupContainer] = React.useState<HTMLElement | null>(null)
-  React.useEffect(() => {
+  // useLayoutEffect (not useEffect) so a defaultOpen dropdown resolves its custom
+  // container before paint — avoids a one-frame flash from document.body.
+  React.useLayoutEffect(() => {
     if (getPopupContainer && triggerRef.current) {
       setPopupContainer(getPopupContainer(triggerRef.current))
     }
