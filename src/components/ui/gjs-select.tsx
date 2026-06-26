@@ -462,6 +462,14 @@ function OptionListInner<V extends SelectValue>(
     scrollToIndex: scrollToOptIdx,
   }), [keyDown, scrollToOptIdx])
 
+  // Map each flatIndex to its option-cursor position so the windowed path can
+  // resolve a visible row's optIdx in O(1) instead of scanning optionRows.
+  const optIdxByFlatIndex = React.useMemo(() => {
+    const m = new Map<number, number>()
+    optionRows.forEach((r, i) => m.set(r.flatIndex, i))
+    return m
+  }, [optionRows])
+
   const renderOption = (option: SelectOption<V>, flatIndex: number, optIdx: number) => {
     const isSelected = selectedValues.includes(option.value)
     const isActive = activeIdx === optIdx
@@ -559,7 +567,7 @@ function OptionListInner<V extends SelectValue>(
                 </div>
               )
             }
-            const optIdx = optionRows.findIndex((r) => r.flatIndex === row.flatIndex)
+            const optIdx = optIdxByFlatIndex.get(row.flatIndex) ?? -1
             return (
               <div key={vItem.key} style={style}>
                 {renderOption(row.option, row.flatIndex, optIdx)}
