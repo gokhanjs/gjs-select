@@ -509,9 +509,11 @@ test("aria-activedescendant updates on ArrowDown", async ({ page }) => {
   await page.waitForTimeout(50)
   const ad = await t.getAttribute("aria-activedescendant")
   expect(ad).toBeTruthy()
-  // The referenced option must exist and be selected
+  // The referenced option must exist and be the active (highlighted) row —
+  // aria-activedescendant tracks the active option, not the selected value.
   const activeOption = page.locator(`#${ad}`)
-  await expect(activeOption).toHaveAttribute("aria-selected", "true")
+  await expect(activeOption).toBeAttached()
+  await expect(activeOption).toHaveAttribute("data-active", "true")
 })
 
 test("aria-activedescendant clears when dropdown closes", async ({ page }) => {

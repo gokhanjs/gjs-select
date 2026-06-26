@@ -462,6 +462,14 @@ function OptionListInner<V extends SelectValue>(
     scrollToIndex: scrollToOptIdx,
   }), [keyDown, scrollToOptIdx])
 
+  // Map each flatIndex to its option-cursor position so the windowed path can
+  // resolve a visible row's optIdx in O(1) instead of scanning optionRows.
+  const optIdxByFlatIndex = React.useMemo(() => {
+    const m = new Map<number, number>()
+    optionRows.forEach((r, i) => m.set(r.flatIndex, i))
+    return m
+  }, [optionRows])
+
   const renderOption = (option: SelectOption<V>, flatIndex: number, optIdx: number) => {
     const isSelected = selectedValues.includes(option.value)
     const isActive = activeIdx === optIdx
@@ -476,7 +484,7 @@ function OptionListInner<V extends SelectValue>(
         data-active={isActive || undefined}
         data-disabled={disabled || undefined}
         role="option"
-        aria-selected={isActive}
+        aria-selected={isSelected}
         aria-disabled={disabled || undefined}
         className={cn(
           "gjs-select-option flex cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-none transition-colors",
@@ -559,7 +567,7 @@ function OptionListInner<V extends SelectValue>(
                 </div>
               )
             }
-            const optIdx = optionRows.findIndex((r) => r.flatIndex === row.flatIndex)
+            const optIdx = optIdxByFlatIndex.get(row.flatIndex) ?? -1
             return (
               <div key={vItem.key} style={style}>
                 {renderOption(row.option, row.flatIndex, optIdx)}
@@ -706,7 +714,13 @@ function SelectInner<V extends SelectValue = string>(
   // ── Value state ─────────────────────────────────────────────────────────────
   const toArray = React.useCallback((v: V | V[] | null | undefined): V[] => {
     if (v == null) return []
-    if (Array.isArray(v)) return v
+    if (Array.isArray(v)) {
+      // labelInValue arrays (controlled multiple/tags) arrive as {label,value}[];
+      // unwrap each element to its raw value so downstream comparisons work.
+      return labelInValue
+        ? v.map((el) => (el && typeof el === "object" ? (el as { value: V }).value : el))
+        : v
+    }
     if (labelInValue && typeof v === "object") return [(v as { value: V }).value]
     return [v]
   }, [labelInValue])
@@ -746,7 +760,9 @@ function SelectInner<V extends SelectValue = string>(
   // getPopupContainer chooses where the dropdown portals. Resolved after mount
   // since it receives the (now-rendered) trigger node.
   const [popupContainer, setPopupContainer] = React.useState<HTMLElement | null>(null)
-  React.useEffect(() => {
+  // useLayoutEffect (not useEffect) so a defaultOpen dropdown resolves its custom
+  // container before paint — avoids a one-frame flash from document.body.
+  React.useLayoutEffect(() => {
     if (getPopupContainer && triggerRef.current) {
       setPopupContainer(getPopupContainer(triggerRef.current))
     }
