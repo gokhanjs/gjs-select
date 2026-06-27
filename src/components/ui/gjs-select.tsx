@@ -1215,7 +1215,12 @@ function SelectInner<V extends SelectValue = string>(
             ref={tagsAreaRef}
             data-gjs-select-content=""
             className={cn(
-              "flex min-w-0 flex-1 flex-wrap items-center gap-1",
+              // w-0 gives the wrap area a definite (0) flex basis. flex-1's 0%
+              // basis resolves to max-content in intrinsic sizing, which would let
+              // a long tag row inflate a min-width:auto parent (flex/grid item)
+              // and overflow it; a definite 0 basis keeps the control bound to the
+              // available width and lets flex-grow fill it.
+              "flex w-0 min-w-0 flex-1 flex-wrap items-center gap-1",
               // Responsive overflow stays on one row (clipping the rest) so the
               // pre-hydration HTML doesn't stack tags into rows and then snap.
               maxTagCount === "responsive" && "flex-nowrap overflow-hidden",
