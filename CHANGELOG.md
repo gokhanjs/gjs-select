@@ -4,6 +4,17 @@ All notable changes to gjs-select are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-06-27
+
+### Fixed
+
+- Multi-select no longer overflows its container in flex/grid layouts. The tag
+  wrap area used a percentage flex-basis (`flex-1`), which resolves to
+  max-content during intrinsic sizing and inflated `min-width:auto` parents
+  (also breaking responsive tag collapse). It now pins a definite zero basis
+  (`w-0`), so the control stays within the available width while flex-grow fills
+  it — no per-usage `min-w-0` workaround needed.
+
 ## [1.0.1] - 2026-06-26
 
 ### Fixed
@@ -40,5 +51,6 @@ First stable release.
 - Install via the shadcn CLI:
   `npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json`
 
+[1.0.2]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.2
 [1.0.1]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.1
 [1.0.0]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.0
