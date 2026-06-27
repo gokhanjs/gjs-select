@@ -1,3 +1,4 @@
+import { ContainerShowcase } from "@/components/landing/container-showcase"
 import { Hero } from "@/components/landing/hero"
 import { Installation } from "@/components/landing/installation"
 import { JsonLd } from "@/components/landing/json-ld"
@@ -18,6 +19,7 @@ export default function Page() {
         <Installation />
         <VariantsShowcase />
         <PatternsShowcase />
+        <ContainerShowcase />
         <UsagePlayground />
         <PropsTable />
       </main>
