@@ -17,6 +17,15 @@ updates:
           - "*"
         update-types:
           - "major"
+    ignore:
+      # typescript-eslint rejects TS 7 outright, which fails `pnpm lint`.
+      - dependency-name: typescript
+        versions:
+          - "7.x"
+      # Must track the Node major that CI and Vercel run, not the newest release.
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: github-actions
     directory: "/"
