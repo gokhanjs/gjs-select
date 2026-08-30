@@ -26,6 +26,10 @@ updates:
       - dependency-name: "@types/node"
         update-types:
           - "version-update:semver-major"
+      # eslint-plugin-react, pulled in by eslint-config-next, crashes on ESLint 10.
+      - dependency-name: eslint
+        versions:
+          - "10.x"
 
   - package-ecosystem: github-actions
     directory: "/"
