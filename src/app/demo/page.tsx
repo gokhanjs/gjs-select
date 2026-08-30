@@ -56,7 +56,7 @@ const SKILLS = [
 ]
 
 const profileSchema = z.object({
-  country: z.string({ required_error: "Ülke seçimi zorunludur" }).min(1, "Ülke seçimi zorunludur"),
+  country: z.string({ error: "Ülke seçimi zorunludur" }).min(1, "Ülke seçimi zorunludur"),
   skills: z
     .array(z.string())
     .min(2, "En az 2 beceri seçin")
