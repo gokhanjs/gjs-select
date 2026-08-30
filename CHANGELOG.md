@@ -4,6 +4,21 @@ All notable changes to gjs-select are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- Updated dependencies to clear 43 open Dependabot advisories (22 high, 20
+  moderate, 1 low). Next.js moves from 16.2.9 to 16.3.3, and the transitive
+  `postcss`, `nanoid`, `sharp`, `undici`, `js-yaml`, `fast-uri`, `ip-address`,
+  `brace-expansion`, and `hono` trees are refreshed to patched versions.
+
+### Changed
+
+- The documentation site's form demos build against zod 4. `zod` is a demo-only
+  dependency, so `gjs-select.tsx` and the distributed registry component are
+  unaffected.
+
 ## [1.0.2] - 2026-06-27
 
 ### Fixed
