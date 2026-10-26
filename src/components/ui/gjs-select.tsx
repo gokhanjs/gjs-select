@@ -36,6 +36,14 @@ export interface TagRenderProps<V extends SelectValue = string> {
   onClose: (e: React.MouseEvent) => void
 }
 
+/** Built-in texts; every key falls back to its English default. */
+export interface SelectLocale {
+  clear?: string
+  search?: string
+  remove?: string
+  loading?: React.ReactNode
+}
+
 /** Imperative handle exposed via ref (focus/blur/scrollTo + the DOM node). */
 export interface SelectRef {
   focus: (options?: FocusOptions) => void
@@ -63,6 +71,7 @@ export interface SelectProps<V extends SelectValue = string> {
   filterSort?: (optionA: SelectOption<V>, optionB: SelectOption<V>, info: { searchValue: string }) => number
   placeholder?: React.ReactNode
   notFoundContent?: React.ReactNode
+  locale?: SelectLocale
   loading?: boolean
   disabled?: boolean
   allowClear?: boolean
@@ -224,6 +233,7 @@ function SelectTag({
   disabled = false,
   onClose,
   removeIcon,
+  removeLabel,
   size = "middle",
   maxTagTextLength,
 }: {
@@ -231,6 +241,7 @@ function SelectTag({
   disabled?: boolean
   onClose: (e: React.MouseEvent) => void
   removeIcon?: React.ReactNode
+  removeLabel: string
   size?: "small" | "middle" | "large"
   maxTagTextLength?: number
 }) {
@@ -259,7 +270,7 @@ function SelectTag({
         <span
           data-gjs-select-tag-close=""
           role="button"
-          aria-label="Remove"
+          aria-label={removeLabel}
           tabIndex={-1}
           onMouseDown={(e) => {
             e.preventDefault()
@@ -381,8 +392,15 @@ function OptionListInner<V extends SelectValue>(
   const scrollToOptIdx = React.useCallback(
     (optIdx: number) => {
       if (!virtual) {
-        const el = parentRef.current?.querySelector<HTMLElement>(`[data-opt-idx="${optIdx}"]`)
-        el?.scrollIntoView({ block: "nearest" })
+        const list = parentRef.current
+        const el = list?.querySelector<HTMLElement>(`[data-opt-idx="${optIdx}"]`)
+        if (!list || !el) return
+        // Scroll only the list: scrollIntoView would also scroll the page while
+        // the popup is still parked off-screen before its first positioning pass.
+        const top = el.offsetTop - list.offsetTop
+        const bottom = top + el.offsetHeight
+        if (top < list.scrollTop) list.scrollTop = top
+        else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight
         return
       }
       const ri = rowIndexOf(optIdx)
@@ -401,11 +419,29 @@ function OptionListInner<V extends SelectValue>(
     [optionRows],
   )
   const prevOptionKey = React.useRef<string | null>(null)
+  // StrictMode's remount makes the virtualizer re-attach and scroll to 0; forget
+  // the key on unmount so the effect below re-applies the initial scroll.
+  React.useEffect(() => () => {
+    prevOptionKey.current = null
+  }, [])
   React.useEffect(() => {
     if (prevOptionKey.current === optionKey) return
     prevOptionKey.current = optionKey
-    setActiveIdx(defaultActiveFirstOption ? firstEnabled() : null)
-  }, [optionKey, defaultActiveFirstOption, firstEnabled])
+    // Single mode starts on the selected option (antd parity); multiple starts
+    // on the first enabled one.
+    const selectedIdx = isMultiple
+      ? -1
+      : optionRows.findIndex((r) => r.option.value === selectedValues[0] && !isOptDisabled(r.option))
+    if (selectedIdx !== -1) {
+      setActiveIdx(selectedIdx)
+      scrollToOptIdx(selectedIdx)
+    } else {
+      setActiveIdx(defaultActiveFirstOption ? firstEnabled() : null)
+    }
+  }, [
+    optionKey, defaultActiveFirstOption, firstEnabled, isMultiple, optionRows,
+    selectedValues, isOptDisabled, scrollToOptIdx,
+  ])
 
   // Publish the active option id up to the combobox (aria-activedescendant).
   React.useEffect(() => {
@@ -621,6 +657,7 @@ function SelectInner<V extends SelectValue = string>(
     filterSort,
     placeholder = "Select...",
     notFoundContent = "No options",
+    locale,
     loading = false,
     disabled = false,
     allowClear = false,
@@ -680,6 +717,10 @@ function SelectInner<V extends SelectValue = string>(
 ) {
   const isMultiple = mode === "multiple" || mode === "tags"
   const showSearch = showSearchProp ?? isMultiple
+  const clearLabel = locale?.clear ?? "Clear selection"
+  const searchLabel = locale?.search ?? "Search"
+  const removeLabel = locale?.remove ?? "Remove"
+  const loadingText = locale?.loading ?? "Loading…"
 
   // ── Search state ────────────────────────────────────────────────────────────
   // Declared before open state because setOpen() resets the query on open/close.
@@ -1036,7 +1077,9 @@ function SelectInner<V extends SelectValue = string>(
   const handleTriggerKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (disabled) return
-      if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      if (open && !showSearch && (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter")) {
+        optionListRef.current?.keyDown(e)
+      } else if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
         // Open and move focus into the selector's search input so subsequent
         // arrows/Enter drive the option list. The onFocusOutside guard keeps
         // this focus (in the anchor) from dismissing the freshly-opened popup.
@@ -1046,12 +1089,12 @@ function SelectInner<V extends SelectValue = string>(
       } else if (e.key === "Escape") {
         setOpen(false)
         triggerRef.current?.focus()
-      } else if (e.key === "Backspace" && isMultiple && !open) {
+      } else if (e.key === "Backspace" && isMultiple && (!open || !showSearch)) {
         e.preventDefault()
         removeLastTag()
       }
     },
-    [disabled, isMultiple, open, setOpen, removeLastTag],
+    [disabled, isMultiple, open, showSearch, setOpen, removeLastTag],
   )
 
   // ── Derived ──────────────────────────────────────────────────────────────────
@@ -1115,7 +1158,7 @@ function SelectInner<V extends SelectValue = string>(
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="size-4 animate-spin" />
-              Loading…
+              {loadingText}
             </span>
           ) : (
             notFoundContent
@@ -1249,6 +1292,7 @@ function SelectInner<V extends SelectValue = string>(
                     disabled={td || disabled}
                     onClose={(e) => handleDeselect(value, e)}
                     removeIcon={removeIcon}
+                    removeLabel={removeLabel}
                     size={size}
                     maxTagTextLength={maxTagTextLength}
                   />
@@ -1306,44 +1350,44 @@ function SelectInner<V extends SelectValue = string>(
                 </span>
               )}
 
-              <input
-                ref={searchInputRef}
-                data-gjs-select-search=""
-                tabIndex={-1}
-                readOnly={!showSearch}
-                aria-label="Search"
-                value={searchValue}
-                onChange={(e) => handleSearch(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  // stopPropagation avoids a double toggle with the trigger onClick.
-                  // A search input is for editing, so a click keeps the popup open;
-                  // a plain (readonly) input acts like the selector and toggles.
-                  e.stopPropagation()
-                  if (disabled) return
-                  setOpen(showSearch ? true : !open)
-                }}
-                className={cn(
-                  // text-base keeps the focused input ≥16px on mobile so iOS Safari
-                // doesn't auto-zoom on focus; md:text-sm restores 14px desktop density.
-                "gjs-select-search bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground",
-                  isMultiple
-                    ? "min-w-10 flex-1"
-                    : !open
-                      // Closed: the value/placeholder carries the selection, so the
-                      // input hides its (possibly kept) text but still covers the
-                      // control to catch the click that opens it.
-                      ? "absolute inset-0 size-full cursor-default opacity-0"
-                      : searchValue
-                        ? "min-w-0 flex-1"
-                        // Open + searchable: keep the input visible (transparent) so
-                        // its text caret shows over the value/placeholder.
-                        : showSearch
-                          ? "absolute inset-0 size-full"
-                          : "absolute inset-0 size-full cursor-default opacity-0",
-                )}
-              />
+              {/* Without search there is no input: focus stays on the combobox,
+                  which drives the list via aria-activedescendant. */}
+              {showSearch && (
+                <input
+                  ref={searchInputRef}
+                  data-gjs-select-search=""
+                  tabIndex={-1}
+                  aria-label={searchLabel}
+                  value={searchValue}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    // stopPropagation avoids a double toggle with the trigger onClick;
+                    // a search input is for editing, so a click keeps the popup open.
+                    e.stopPropagation()
+                    if (disabled) return
+                    setOpen(true)
+                  }}
+                  className={cn(
+                    // text-base keeps the focused input ≥16px on mobile so iOS Safari
+                  // doesn't auto-zoom on focus; md:text-sm restores 14px desktop density.
+                  "gjs-select-search bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground",
+                    isMultiple
+                      ? "min-w-10 flex-1"
+                      : !open
+                        // Closed: the value/placeholder carries the selection, so the
+                        // input hides its (possibly kept) text but still covers the
+                        // control to catch the click that opens it.
+                        ? "absolute inset-0 size-full cursor-default opacity-0"
+                        : searchValue
+                          ? "min-w-0 flex-1"
+                          // Open: keep the input visible (transparent) so its text
+                          // caret shows over the value/placeholder.
+                          : "absolute inset-0 size-full",
+                  )}
+                />
+              )}
             </span>
           </div>
 
@@ -1360,7 +1404,7 @@ function SelectInner<V extends SelectValue = string>(
               <span
                 data-gjs-select-clear=""
                 role="button"
-                aria-label="Clear selection"
+                aria-label={clearLabel}
                 onMouseDown={handleClear}
                 className="gjs-select-clear inline-flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
               >
@@ -1419,7 +1463,8 @@ function SelectInner<V extends SelectValue = string>(
           }}
           className={cn(
             "gjs-select-dropdown",
-            "z-50 min-w-32 overflow-hidden rounded-md border border-border",
+            "z-50 overflow-hidden rounded-md border border-border",
+            popupMatchSelectWidth !== true && "min-w-32",
             "bg-popover text-popover-foreground shadow-md",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

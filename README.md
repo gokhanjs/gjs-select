@@ -98,6 +98,7 @@ The component mirrors the antd `Select` API. The most common props:
 | `filterOption` | `boolean \| (input, option) => boolean` | Custom client-side filtering. |
 | `allowClear` | `boolean` | Show the clear (✕) affordance. |
 | `disabled` / `loading` | `boolean` | Disabled / loading state. |
+| `locale` | `{ clear?, search?, remove?, loading? }` | Built-in texts (aria-labels, loading text); English by default. |
 | `size` | `"small" \| "middle" \| "large"` | Control height. |
 | `variant` | `"outlined" \| "filled" \| "borderless"` | Visual style. |
 | `status` | `"error" \| "warning"` | Validation state. |
@@ -111,6 +112,17 @@ Custom rendering (`optionRender`, `tagRender`, `labelRender`, `dropdownRender`),
 `fieldNames`, `labelInValue`, `placement`, `popupMatchSelectWidth`, an imperative
 ref (`focus`/`blur`/`scrollTo`), and the full event surface are also supported —
 see the **[live docs](https://gjs-select.gokhanyildiz.dev)** for the complete reference.
+
+### Labelling
+
+The control is a `div` with `role="combobox"`, so `<label htmlFor>` does not
+associate with it. Name it with `aria-labelledby` (pointing at your label's
+`id`) or `aria-label`:
+
+```tsx
+<label id="fruit-label">Fruit</label>
+<Select aria-labelledby="fruit-label" options={options} />
+```
 
 ## Styling
 

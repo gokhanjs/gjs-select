@@ -62,6 +62,11 @@ const PROPS = [
     description: "Show a spinner and loading state.",
   },
   {
+    name: "locale",
+    type: "{ clear?, search?, remove?, loading? }",
+    description: "Built-in texts: clear, search and tag-remove aria-labels and the loading text.",
+  },
+  {
     name: "maxCount",
     type: "number",
     default: "—",
