@@ -40,7 +40,7 @@ test.beforeEach(async ({ page }) => {
 
 test("renders all select triggers on page", async ({ page }) => {
   const triggers = page.locator("[data-gjs-select-trigger]")
-  await expect(triggers).toHaveCount(19)
+  await expect(triggers).toHaveCount(24)
 })
 
 test("shows placeholder text", async ({ page }) => {
@@ -504,8 +504,7 @@ test("aria-activedescendant updates on ArrowDown", async ({ page }) => {
   const t = trigger(page, 0)
   await t.click()
   await expect(dropdown(page)).toBeVisible()
-  const searchInput = page.locator("[data-gjs-select-search]").first()
-  await searchInput.press("ArrowDown")
+  await page.keyboard.press("ArrowDown")
   await page.waitForTimeout(50)
   const ad = await t.getAttribute("aria-activedescendant")
   expect(ad).toBeTruthy()
@@ -519,10 +518,9 @@ test("aria-activedescendant updates on ArrowDown", async ({ page }) => {
 test("aria-activedescendant clears when dropdown closes", async ({ page }) => {
   const t = trigger(page, 0)
   await t.click()
-  const searchInput = page.locator("[data-gjs-select-search]").first()
-  await searchInput.press("ArrowDown")
+  await page.keyboard.press("ArrowDown")
   await page.waitForTimeout(50)
-  await searchInput.press("Escape")
+  await page.keyboard.press("Escape")
   await page.waitForTimeout(50)
   await expect(t).not.toHaveAttribute("aria-activedescendant")
 })
@@ -719,4 +717,90 @@ test("trigger horizontal padding is consistent across single / multiple / tags",
   const single = await padOf("Fruit selection")
   expect(await padOf("Multiple fruit selection")).toBe(single)
   expect(await padOf("Tag creation")).toBe(single)
+})
+
+// ─── 20. Locale, focus, active option, popup width ───────────────────────────
+
+function triggerByLabel(page: Page, label: string): Locator {
+  return page.locator(`[data-gjs-select-trigger][aria-label="${label}"]`)
+}
+
+function activeOption(page: Page): Locator {
+  return page.locator("[data-gjs-select-option][data-active]")
+}
+
+test("single: opening highlights the selected option and ArrowDown moves past it", async ({ page }) => {
+  const t = triggerByLabel(page, "Localized single")
+  await t.focus()
+  const scrollY = await page.evaluate(() => window.scrollY)
+  await page.keyboard.press("Enter")
+  await expect(dropdown(page)).toBeVisible()
+  await expect(activeOption(page)).toHaveText("Cherry")
+  await expect(t).toHaveAttribute("aria-activedescendant", (await activeOption(page).getAttribute("id"))!)
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY)
+  // Durian is disabled, so the next enabled option is Elderberry.
+  await page.keyboard.press("ArrowDown")
+  await expect(activeOption(page)).toHaveText("Elderberry")
+})
+
+test("virtual: opening scrolls to and highlights the selected option", async ({ page }) => {
+  await triggerByLabel(page, "Virtual preselected").click()
+  await expect(activeOption(page)).toHaveText("Option 250")
+  await expect(activeOption(page)).toBeInViewport()
+})
+
+test("multiple: opening keeps the first enabled option active", async ({ page }) => {
+  const t = triggerByLabel(page, "Localized multiple")
+  await t.click()
+  await option(page, "Cherry").click()
+  await page.keyboard.press("Escape")
+  await expect(dropdown(page)).not.toBeVisible()
+  await t.click()
+  await expect(activeOption(page)).toHaveText("Apple")
+})
+
+test("locale: aria labels and loading text come from the locale prop", async ({ page }) => {
+  const single = triggerByLabel(page, "Localized single")
+  await single.hover()
+  await expect(single.locator("[data-gjs-select-clear]")).toHaveAttribute("aria-label", "Seçimi temizle")
+
+  const multi = triggerByLabel(page, "Localized multiple")
+  await multi.click()
+  await option(page, "Cherry").click()
+  await expect(multi.locator("[data-gjs-select-tag-close]")).toHaveAttribute("aria-label", "Kaldır")
+  await expect(multi.locator("[data-gjs-select-search]")).toHaveAttribute("aria-label", "Ara")
+  await page.keyboard.press("Escape")
+
+  await triggerByLabel(page, "Localized loading").click()
+  await expect(page.locator("[data-gjs-select-empty]")).toHaveText("Yükleniyor…")
+})
+
+test("search off: no search input, focus stays on the combobox, keyboard selects", async ({ page }) => {
+  const t = trigger(page, 0)
+  await expect(t.locator("[data-gjs-select-search]")).toHaveCount(0)
+  await t.focus()
+  await page.keyboard.press("Enter")
+  await expect(dropdown(page)).toBeVisible()
+  await expect(t).toBeFocused()
+  await page.keyboard.press("ArrowDown")
+  await page.keyboard.press("Enter")
+  await expect(dropdown(page)).not.toBeVisible()
+  await expect(t.locator("[data-gjs-select-value]")).toHaveText("Banana")
+})
+
+test("search off: clicking opens with focus on the combobox", async ({ page }) => {
+  const t = trigger(page, 0)
+  await t.click()
+  await expect(dropdown(page)).toBeVisible()
+  await expect(t).toBeFocused()
+})
+
+test("popupMatchSelectWidth: dropdown is as wide as a narrow trigger", async ({ page }) => {
+  const t = triggerByLabel(page, "Narrow select")
+  await t.click()
+  await expect(dropdown(page)).toBeVisible()
+  const tw = await t.evaluate((el) => (el as HTMLElement).offsetWidth)
+  const dw = await dropdown(page).evaluate((el) => (el as HTMLElement).offsetWidth)
+  expect(tw).toBe(100)
+  expect(dw).toBe(tw)
 })

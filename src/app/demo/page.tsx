@@ -55,6 +55,13 @@ const SKILLS = [
   { label: "GraphQL", value: "gql" },
 ]
 
+const TR_LOCALE = {
+  clear: "Seçimi temizle",
+  search: "Ara",
+  remove: "Kaldır",
+  loading: "Yükleniyor…",
+}
+
 const profileSchema = z.object({
   country: z.string({ error: "Ülke seçimi zorunludur" }).min(1, "Ülke seçimi zorunludur"),
   skills: z
@@ -245,6 +252,15 @@ export default function Page() {
           </p>
         </div>
         <RHFDemo />
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-medium text-muted-foreground">Locale + preselected + narrow</p>
+        <Select options={FRUITS} defaultValue="cherry" allowClear locale={TR_LOCALE} aria-label="Localized single" />
+        <Select options={FRUITS} mode="multiple" locale={TR_LOCALE} aria-label="Localized multiple" />
+        <Select options={[]} loading locale={TR_LOCALE} aria-label="Localized loading" />
+        <Select options={MANY} virtual defaultValue="opt-250" aria-label="Virtual preselected" />
+        <Select options={FRUITS} style={{ width: 100 }} placeholder="Narrow" aria-label="Narrow select" />
       </section>
     </main>
   )

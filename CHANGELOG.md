@@ -6,6 +6,35 @@ All notable changes to gjs-select are documented here. The format is based on
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-26
+
+### Added
+
+- `locale` prop for the built-in texts: `{ clear?, search?, remove?, loading? }`
+  sets the clear button, search input, and tag remove `aria-label`s and the
+  loading text. Every key falls back to its English default, so existing usage
+  is unchanged. `notFoundContent` stays a separate prop for antd parity.
+
+### Fixed
+
+- Single select opens with the selected option highlighted and scrolled into
+  view (virtual lists included), so ArrowDown moves to the next option instead
+  of the second one. Multiple mode still starts on the first enabled option,
+  matching antd.
+- The dropdown no longer opens wider than a narrow trigger: `min-w-32` now
+  applies only when `popupMatchSelectWidth` is not `true`.
+
+### Changed
+
+- Without `showSearch`, the hidden read-only search input is no longer rendered.
+  Focus stays on the combobox, which drives the list via
+  `aria-activedescendant`; screen readers no longer announce a "Search" field.
+  Styles or tests that target `[data-gjs-select-search]` on a non-searchable
+  select need updating.
+- The documentation site's form demos build against zod 4. `zod` is a demo-only
+  dependency, so `gjs-select.tsx` and the distributed registry component are
+  unaffected.
+
 ### Security
 
 - Updated dependencies to clear 43 open Dependabot advisories (22 high, 20
@@ -16,12 +45,6 @@ All notable changes to gjs-select are documented here. The format is based on
   moderate, 6 low). Next.js moves from 16.3.3 to 16.4.2, React to 19.3.1, and
   radix-ui to 1.8.1; the transitive `body-parser`, `brace-expansion`, and
   `source-map-js` trees are refreshed to patched versions.
-
-### Changed
-
-- The documentation site's form demos build against zod 4. `zod` is a demo-only
-  dependency, so `gjs-select.tsx` and the distributed registry component are
-  unaffected.
 
 ## [1.0.2] - 2026-06-27
 
@@ -70,6 +93,7 @@ First stable release.
 - Install via the shadcn CLI:
   `npx shadcn@latest add https://gjs-select.gokhanyildiz.dev/r/gjs-select.json`
 
+[1.1.0]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.1.0
 [1.0.2]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.2
 [1.0.1]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.1
 [1.0.0]: https://github.com/gokhanjs/gjs-select/releases/tag/v1.0.0
