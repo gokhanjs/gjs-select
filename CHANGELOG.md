@@ -38,6 +38,10 @@ All notable changes to gjs-select are documented here. The format is based on
   moderate, 1 low). Next.js moves from 16.2.9 to 16.3.3, and the transitive
   `postcss`, `nanoid`, `sharp`, `undici`, `js-yaml`, `fast-uri`, `ip-address`,
   `brace-expansion`, and `hono` trees are refreshed to patched versions.
+- Updated dependencies to clear 54 open advisories (4 critical, 19 high, 25
+  moderate, 6 low). Next.js moves from 16.3.3 to 16.4.2, React to 19.3.1, and
+  radix-ui to 1.8.1; the transitive `body-parser`, `brace-expansion`, and
+  `source-map-js` trees are refreshed to patched versions.
 
 ### Changed
 
