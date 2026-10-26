@@ -31,6 +31,9 @@ All notable changes to gjs-select are documented here. The format is based on
   `aria-activedescendant`; screen readers no longer announce a "Search" field.
   Styles or tests that target `[data-gjs-select-search]` on a non-searchable
   select need updating.
+- The documentation site's form demos build against zod 4. `zod` is a demo-only
+  dependency, so `gjs-select.tsx` and the distributed registry component are
+  unaffected.
 
 ### Security
 
@@ -42,12 +45,6 @@ All notable changes to gjs-select are documented here. The format is based on
   moderate, 6 low). Next.js moves from 16.3.3 to 16.4.2, React to 19.3.1, and
   radix-ui to 1.8.1; the transitive `body-parser`, `brace-expansion`, and
   `source-map-js` trees are refreshed to patched versions.
-
-### Changed
-
-- The documentation site's form demos build against zod 4. `zod` is a demo-only
-  dependency, so `gjs-select.tsx` and the distributed registry component are
-  unaffected.
 
 ## [1.0.2] - 2026-06-27
 
