@@ -43,7 +43,7 @@
     "test:update-snapshots": "playwright test --project=visual --update-snapshots"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
+    "@hookform/resolvers": "^6.0.0",
     "@tanstack/react-virtual": "^3.14.21",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
